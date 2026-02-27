@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+from urllib.parse import quote
 
 start_time = datetime.now()
 start_time_str = start_time.strftime("%d/%m/%Y %H:%M:%S")
@@ -21,11 +22,19 @@ RN_CSV_FILES = [
     "data/risultati_puliti_minist.csv",
 ]
 
-# --- Link OneDrive/SharePoint condiviso (MODIFICA QUANDO PRONTO) ---
-# Quando condividi le cartelle PDF su SharePoint/OneDrive, incolla qui
-# i link base. Lascia vuoto ("") se non ancora configurato.
-ONEDRIVE_LINK_AT = ""      # es. "https://mefgov.sharepoint.com/sites/..."
-ONEDRIVE_LINK_RN = ""      # es. "https://mefgov.sharepoint.com/sites/..."
+# --- OneDrive URL Config ---
+# Base URL di SharePoint
+SHAREPOINT_BASE = "https://mefgovit-my.sharepoint.com/my"
+
+# Percorso base su OneDrive (dalla root di Documents)
+ONEDRIVE_PATH_BASE = (
+    "/personal/matteo_caruso_rgs_tesoro_it"
+    "/Documents/Documenti/data analysis/at mit"
+)
+
+# Percorsi relativi delle cartelle PDF
+AT_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/allegati at"
+RN_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/output_mit_normativa/allegati"
 
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║          FINE IMPOSTAZIONI                                          ║
@@ -35,6 +44,39 @@ st.set_page_config(page_title="CUP Document Finder", layout="wide")
 
 BADGE_AT = "🟦"
 BADGE_RN = "🟧"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  FUNZIONI URL ONEDRIVE
+# ═══════════════════════════════════════════════════════════════════════
+
+def encode_path(path):
+    """Codifica un percorso per URL SharePoint."""
+    return quote(path, safe="")
+
+
+def onedrive_link_at(filename):
+    """Genera link diretto al PDF su OneDrive per AT."""
+    file_path = AT_ONEDRIVE_PATH + "/" + filename
+    parent_path = AT_ONEDRIVE_PATH
+    return (
+        f"{SHAREPOINT_BASE}"
+        f"?id={encode_path(file_path)}"
+        f"&parent={encode_path(parent_path)}"
+    )
+
+
+def onedrive_link_rn(cartella, filename):
+    """Genera link diretto al PDF su OneDrive per RN."""
+    if not cartella or not filename:
+        return None
+    file_path = RN_ONEDRIVE_PATH + "/" + cartella + "/" + filename
+    parent_path = RN_ONEDRIVE_PATH + "/" + cartella
+    return (
+        f"{SHAREPOINT_BASE}"
+        f"?id={encode_path(file_path)}"
+        f"&parent={encode_path(parent_path)}"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -57,7 +99,9 @@ def load_rn_data():
     for csv_file in RN_CSV_FILES:
         if os.path.exists(csv_file):
             try:
-                df = pd.read_csv(csv_file, sep=";", encoding="utf-8-sig", dtype=str)
+                df = pd.read_csv(
+                    csv_file, sep=";", encoding="utf-8-sig", dtype=str
+                )
                 df = df.fillna("")
                 df["_csv_origine"] = os.path.basename(csv_file)
                 frames.append(df)
@@ -106,7 +150,7 @@ with col_s1:
     if at_disponibile:
         st.success(f"{BADGE_AT} Amministrazione Trasparente — caricata")
     else:
-        st.error(f"❌ Amm. Trasparente — dati non trovati")
+        st.error("❌ Amm. Trasparente — dati non trovati")
 with col_s2:
     if rn_disponibile:
         st.success(
@@ -118,7 +162,6 @@ with col_s2:
         st.error("❌ Ricerca Normativa — dati non trovati")
 
 st.markdown("---")
-
 st.caption(
     f"{BADGE_AT} = Amministrazione Trasparente  |  "
     f"{BADGE_RN} = Ricerca Normativa"
@@ -135,11 +178,15 @@ if query:
 
     results_at = pd.DataFrame()
     if at_disponibile:
-        results_at = df_at[df_at["cup"].str.contains(query_clean, na=False)]
+        results_at = df_at[
+            df_at["cup"].str.contains(query_clean, na=False)
+        ]
 
     results_rn = pd.DataFrame()
     if rn_disponibile:
-        results_rn = df_rn[df_rn["CUP"].str.contains(query_clean, na=False)]
+        results_rn = df_rn[
+            df_rn["CUP"].str.contains(query_clean, na=False)
+        ]
 
     tot = len(results_at) + len(results_rn)
 
@@ -171,64 +218,82 @@ if query:
                 options=unique_cups,
             )
             if not results_at.empty:
-                results_at = results_at[results_at["cup"] == selected_cup]
+                results_at = results_at[
+                    results_at["cup"] == selected_cup
+                ]
             if not results_rn.empty:
-                results_rn = results_rn[results_rn["CUP"] == selected_cup]
+                results_rn = results_rn[
+                    results_rn["CUP"] == selected_cup
+                ]
 
-        # ─── TABS ─────────────────────────────────────────────────────
+        # ─── TABS ─────────────────────────────────────────────────
         tab_at, tab_rn, tab_all = st.tabs([
             f"{BADGE_AT} Amm. Trasparente ({len(results_at)})",
             f"{BADGE_RN} Ricerca Normativa ({len(results_rn)})",
-            f"📋 Tutti i risultati ({len(results_at) + len(results_rn)})",
+            f"📋 Tutti i risultati "
+            f"({len(results_at) + len(results_rn)})",
         ])
 
-        # ═══ TAB AT ═══════════════════════════════════════════════════
+        # ═══ TAB AT ═══════════════════════════════════════════════
         with tab_at:
             if results_at.empty:
-                st.info("Nessun risultato da Amministrazione Trasparente.")
+                st.info(
+                    "Nessun risultato da Amministrazione Trasparente."
+                )
             else:
                 for i, row in results_at.iterrows():
                     with st.expander(
-                        f"{BADGE_AT} 📄 {row['file']}", expanded=True
+                        f"{BADGE_AT} 📄 {row['file']}",
+                        expanded=True,
                     ):
                         col1, col2 = st.columns(2)
                         with col1:
                             st.markdown(f"**CUP:** `{row['cup']}`")
                             st.markdown(f"**Capitolo:** {row['cap']}")
-                            st.markdown(f"**Piano Gestionale:** {row['pg']}")
+                            st.markdown(
+                                f"**Piano Gestionale:** {row['pg']}"
+                            )
                             st.markdown(
                                 f"**Stato - Capitolo - Piano:** "
                                 f"{row['stacappg']}"
                             )
                         with col2:
-                            st.markdown(f"**N. Decreto:** {row['n_decreto']}")
                             st.markdown(
-                                f"**Data Decreto:** {row['data_decreto']}"
+                                f"**N. Decreto:** {row['n_decreto']}"
                             )
-                            st.markdown(f"**Decreto:** {row['decreto']}")
+                            st.markdown(
+                                f"**Data Decreto:** "
+                                f"{row['data_decreto']}"
+                            )
+                            st.markdown(
+                                f"**Decreto:** {row['decreto']}"
+                            )
 
                         st.caption(
-                            f"Fonte: {BADGE_AT} Amministrazione Trasparente"
+                            f"Fonte: {BADGE_AT} "
+                            f"Amministrazione Trasparente"
                         )
 
-                        # Link documento
-                        st.markdown(f"📎 **Documento:** `{row['file']}`")
-                        if ONEDRIVE_LINK_AT:
-                            st.markdown(
-                                f"[📂 Apri cartella condivisa AT]"
-                                f"({ONEDRIVE_LINK_AT})"
-                            )
+                        # Link diretto al PDF su OneDrive
+                        link = onedrive_link_at(row["file"])
+                        st.markdown(
+                            f"📥 [**Apri documento su OneDrive**]"
+                            f"({link})"
+                        )
 
-        # ═══ TAB RN ═══════════════════════════════════════════════════
+        # ═══ TAB RN ═══════════════════════════════════════════════
         with tab_rn:
             if results_rn.empty:
                 st.info("Nessun risultato da Ricerca Normativa.")
             else:
                 for i, row in results_rn.iterrows():
-                    doc_name = row.get("Documento", "Documento sconosciuto")
+                    doc_name = row.get(
+                        "Documento", "Documento sconosciuto"
+                    )
                     tipologia = row.get("Tipologia", "")
                     with st.expander(
-                        f"{BADGE_RN} 📜 {doc_name}", expanded=True
+                        f"{BADGE_RN} 📜 {doc_name}",
+                        expanded=True,
                     ):
                         col1, col2 = st.columns(2)
                         with col1:
@@ -260,10 +325,13 @@ if query:
                                     f"{row['Data_Decreto']}"
                                 )
                             if tipologia:
-                                st.markdown(f"**Tipologia:** {tipologia}")
+                                st.markdown(
+                                    f"**Tipologia:** {tipologia}"
+                                )
                             if row.get("Ministero", ""):
                                 st.markdown(
-                                    f"**Ministero:** {row['Ministero']}"
+                                    f"**Ministero:** "
+                                    f"{row['Ministero']}"
                                 )
 
                         cartella = row.get("Cartella", "")
@@ -274,27 +342,29 @@ if query:
                             f"({row.get('_csv_origine', '')})"
                         )
 
-                        # Link documento
-                        st.markdown(f"📎 **Documento:** `{doc_name}`")
-                        if ONEDRIVE_LINK_RN:
+                        # Link diretto al PDF su OneDrive
+                        link = onedrive_link_rn(cartella, doc_name)
+                        if link:
                             st.markdown(
-                                f"[📂 Apri cartella condivisa RN]"
-                                f"({ONEDRIVE_LINK_RN})"
+                                f"📥 [**Apri documento su OneDrive**]"
+                                f"({link})"
                             )
 
-        # ═══ TAB TUTTI ════════════════════════════════════════════════
+        # ═══ TAB TUTTI ════════════════════════════════════════════
         with tab_all:
             st.markdown("Riepilogo combinato di tutti i risultati.")
 
             if not results_at.empty:
-                st.subheader(f"{BADGE_AT} Amministrazione Trasparente")
+                st.subheader(
+                    f"{BADGE_AT} Amministrazione Trasparente"
+                )
                 display_at = results_at[
                     ["cup", "cap", "pg", "n_decreto",
                      "data_decreto", "file"]
                 ].copy()
                 display_at.columns = [
-                    "CUP", "Capitolo", "Piano Gest.", "N. Decreto",
-                    "Data Decreto", "Documento",
+                    "CUP", "Capitolo", "Piano Gest.",
+                    "N. Decreto", "Data Decreto", "Documento",
                 ]
                 display_at.insert(0, "Fonte", BADGE_AT)
                 st.table(display_at.reset_index(drop=True))
@@ -337,9 +407,11 @@ with st.sidebar:
         st.markdown("**Dettaglio per tipo:**")
         for csv_name in df_rn["_csv_origine"].unique():
             subset = df_rn[df_rn["_csv_origine"] == csv_name]
-            tipo = (csv_name
-                    .replace("risultati_puliti_", "")
-                    .replace(".csv", ""))
+            tipo = (
+                csv_name
+                .replace("risultati_puliti_", "")
+                .replace(".csv", "")
+            )
             st.caption(
                 f"  • {tipo}: {len(subset):,} record, "
                 f"{subset['CUP'].nunique():,} CUP unici"
@@ -357,27 +429,26 @@ with st.sidebar:
         cup_totali = cup_at | cup_rn
 
         st.metric("CUP totali (unici)", f"{len(cup_totali):,}")
-        st.metric("CUP in entrambe le fonti", f"{len(cup_comuni):,}")
-        st.metric(f"CUP solo in {BADGE_AT}", f"{len(cup_at - cup_rn):,}")
-        st.metric(f"CUP solo in {BADGE_RN}", f"{len(cup_rn - cup_at):,}")
+        st.metric(
+            "CUP in entrambe le fonti", f"{len(cup_comuni):,}"
+        )
+        st.metric(
+            f"CUP solo in {BADGE_AT}",
+            f"{len(cup_at - cup_rn):,}",
+        )
+        st.metric(
+            f"CUP solo in {BADGE_RN}",
+            f"{len(cup_rn - cup_at):,}",
+        )
 
     st.markdown("---")
-
-    # Link alle cartelle condivise
-    if ONEDRIVE_LINK_AT or ONEDRIVE_LINK_RN:
-        st.subheader("📂 Cartelle PDF")
-        if ONEDRIVE_LINK_AT:
-            st.markdown(
-                f"[{BADGE_AT} PDF Amm. Trasparente]({ONEDRIVE_LINK_AT})"
-            )
-        if ONEDRIVE_LINK_RN:
-            st.markdown(
-                f"[{BADGE_RN} PDF Ricerca Normativa]({ONEDRIVE_LINK_RN})"
-            )
-        st.markdown("---")
-
     st.caption(f"Avviato: {start_time_str}")
     st.caption(
         f"Fonti: {BADGE_AT} MIT Amm. Trasparente  |  "
         f"{BADGE_RN} MIT Ricerca Normativa"
+    )
+    st.markdown("---")
+    st.caption(
+        "⚠️ Per accedere ai PDF è necessario avere accesso "
+        "alla cartella OneDrive condivisa."
     )
