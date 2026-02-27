@@ -137,7 +137,7 @@ rn_disponibile = not df_rn.empty
 #  INTERFACCIA
 # ═══════════════════════════════════════════════════════════════════════
 
-st.title("🔎 CUP Document Finder (CUPDF)")
+st.title("CUP Document Finder (CUPDF)")
 st.markdown(
     "Ricerca documentazione relativa al CUP da "
     f"**{BADGE_AT} Amministrazione Trasparente** e "
