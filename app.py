@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 import base64
-import urllib.request
 from datetime import datetime
 from urllib.parse import quote
-from pathlib import Path
 
 start_time = datetime.now()
 start_time_str = start_time.strftime("%d/%m/%Y %H:%M:%S")
@@ -33,36 +31,6 @@ ONEDRIVE_PATH_BASE = (
 AT_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/allegati at"
 RN_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/output_mit_normativa/allegati"
 
-# ── RGS Logo ─────────────────────────────────────────────────────────
-# Primary source: raw GitHub URL.
-# ⚠️  Replace the value below with the actual raw URL of your file, e.g.:
-#   https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/Logo_RGS_orizzontale.png
-GITHUB_LOGO_URL = (
-    "https://raw.github.com/mcaruso17/cupdf/blob/main/Logo%20RGS%20orizzontale.png"
-)
-
-# Local fallback (used if the GitHub fetch fails or during local dev)
-_LOGO_LOCAL_CANDIDATES = [
-    Path(__file__).parent / "Logo_RGS_orizzontale.png",
-    Path("Logo_RGS_orizzontale.png"),
-    Path("assets/Logo_RGS_orizzontale.png"),
-]
-
-@st.cache_data(show_spinner=False)
-def _load_logo_b64() -> str | None:
-    # 1. Try GitHub (raw URL, no auth needed for public repos)
-    try:
-        with urllib.request.urlopen(GITHUB_LOGO_URL, timeout=5) as resp:
-            return base64.b64encode(resp.read()).decode()
-    except Exception:
-        pass
-    # 2. Fallback: local file
-    for p in _LOGO_LOCAL_CANDIDATES:
-        if p.exists():
-            return base64.b64encode(p.read_bytes()).decode()
-    return None
-
-RGS_LOGO_B64 = _load_logo_b64()
 
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║          FINE IMPOSTAZIONI                                          ║
@@ -211,13 +179,6 @@ section[data-testid="stMain"],
     align-items: center;
     gap: 20px;
     padding: 14px 40px;
-}
-/* The logo PNG has a black background; invert it to white for the blue band */
-.mef-logo-img {
-    height: 46px;
-    width: auto;
-    filter: brightness(0) invert(1);
-    flex-shrink: 0;
 }
 .mef-logo-fallback {
     width: 52px; height: 52px;
@@ -850,20 +811,10 @@ if query:
 #  FOOTER
 # ═══════════════════════════════════════════════════════════════════════
 
-_logo_footer = (
-    f'<img src="data:image/png;base64,{RGS_LOGO_B64}" '
-    f'alt="MEF — Ragioneria Generale dello Stato" '
-    f'style="height:36px;width:auto;margin-top:8px;display:block" />'
-    if RGS_LOGO_B64 else ""
-)
-
 st.markdown(
     f'<div class="mef-footer">'
-    f'  <div>'
-    f'    <div>Ministero dell\'Economia e delle Finanze — Ragioneria Generale dello Stato</div>'
-    f'    {_logo_footer}'
-    f'  </div>'
-    f'  <span style="align-self:flex-end">Avviato: {start_time_str} &nbsp;|&nbsp;'
+    f'  <span>Ministero dell\'Economia e delle Finanze — Ragioneria Generale dello Stato</span>'
+    f'  <span>Avviato: {start_time_str} &nbsp;|&nbsp;'
     f'    <span class="mef-tag tag-at" style="font-size:9px">AT</span>'
     f'    &nbsp;Amm. Trasparente&nbsp;&nbsp;'
     f'    <span class="mef-tag tag-rn" style="font-size:9px">RN</span>'
