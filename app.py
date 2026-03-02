@@ -498,6 +498,37 @@ footer                                 { display: none !important; }
 
 st.markdown(MEF_CSS, unsafe_allow_html=True)
 
+/* ══ FIX — STREAMLIT NATIVE HEADER BAR ══ */
+header[data-testid="stHeader"] {
+    background-color: transparent !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* ══ FIX — SIDEBAR REOPEN BUTTON ══ */
+[data-testid="collapsedControl"] {
+    background-color: #132B6B !important;
+    border-right: 3px solid #C49B1D !important;
+    border-radius: 0 6px 6px 0 !important;
+    z-index: 999999 !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+[data-testid="collapsedControl"] button {
+    color: #FFFFFF !important;
+    background-color: transparent !important;
+}
+[data-testid="collapsedControl"] button svg,
+[data-testid="collapsedControl"] button svg path {
+    color: #FFFFFF !important;
+    fill: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+}
+
 
 # ═══════════════════════════════════════════════════════════════════════
 #  FUNZIONI URL ONEDRIVE
