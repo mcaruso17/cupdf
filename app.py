@@ -583,19 +583,9 @@ rn_disponibile = not df_rn.empty
 #  INSTITUTIONAL HEADER
 # ═══════════════════════════════════════════════════════════════════════
 
-if RGS_LOGO_B64:
-    logo_html = (
-        f'<img class="mef-logo-img" '
-        f'src="data:image/png;base64,{RGS_LOGO_B64}" '
-        f'alt="MEF — Ragioneria Generale dello Stato" />'
-    )
-else:
-    logo_html = '<div class="mef-logo-fallback">MEF</div>'
-
-st.markdown(f"""
+st.markdown("""
 <div class="mef-header">
   <div class="mef-header-inner">
-    {logo_html}
     <div>
       <div class="mef-header-ministry">Ministero dell'Economia e delle Finanze</div>
       <div class="mef-header-dept">Ragioneria Generale dello Stato</div>
@@ -861,10 +851,20 @@ if query:
 #  FOOTER
 # ═══════════════════════════════════════════════════════════════════════
 
+_logo_footer = (
+    f'<img src="data:image/png;base64,{RGS_LOGO_B64}" '
+    f'alt="MEF — Ragioneria Generale dello Stato" '
+    f'style="height:36px;width:auto;margin-top:8px;display:block" />'
+    if RGS_LOGO_B64 else ""
+)
+
 st.markdown(
     f'<div class="mef-footer">'
-    f'  <span>Ministero dell\'Economia e delle Finanze — Ragioneria Generale dello Stato</span>'
-    f'  <span>Avviato: {start_time_str} &nbsp;|&nbsp;'
+    f'  <div>'
+    f'    <div>Ministero dell\'Economia e delle Finanze — Ragioneria Generale dello Stato</div>'
+    f'    {_logo_footer}'
+    f'  </div>'
+    f'  <span style="align-self:flex-end">Avviato: {start_time_str} &nbsp;|&nbsp;'
     f'    <span class="mef-tag tag-at" style="font-size:9px">AT</span>'
     f'    &nbsp;Amm. Trasparente&nbsp;&nbsp;'
     f'    <span class="mef-tag tag-rn" style="font-size:9px">RN</span>'
