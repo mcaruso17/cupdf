@@ -38,7 +38,7 @@ RN_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/output_mit_normativa/allegati"
 # ⚠️  Replace the value below with the actual raw URL of your file, e.g.:
 #   https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/Logo_RGS_orizzontale.png
 GITHUB_LOGO_URL = (
-"https://github.com/mcaruso17/cupdf/blob/main/Logo%20RGS%20orizzontale.png"
+"https://raw.github.com/mcaruso17/cupdf/blob/main/Logo%20RGS%20orizzontale.png"
 )
 
 # Local fallback (used if the GitHub fetch fails or during local dev)
