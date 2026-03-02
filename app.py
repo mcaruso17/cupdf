@@ -42,11 +42,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ═══════════════════════════════════════════════════════════════════════
-#  MEF / RGS VISUAL IDENTITY — CSS
-#  All custom elements carry explicit hardcoded colors so that
-#  Streamlit's dark-mode theme cannot bleed through.
-# ═══════════════════════════════════════════════════════════════════════
 MEF_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap');
@@ -63,7 +58,6 @@ MEF_CSS = """
 
 /* ══════════════════════════════════════════════════════════
    DARK-MODE NEUTRALISATION
-   Re-force all Streamlit dark overrides back to white/light.
    ══════════════════════════════════════════════════════════ */
 [data-theme="dark"] .main,
 [data-theme="dark"] .block-container,
@@ -77,7 +71,6 @@ MEF_CSS = """
 [data-theme="dark"] span:not([class*="mef-"]):not([class*="sb-"]):not([class*="doc-"]):not([class*="tag-"]),
 [data-theme="dark"] div:not([class*="mef-"]):not([class*="sb-"]):not([class*="doc-"]):not([class*="card-"]),
 [data-theme="dark"] li { color: #17203A !important; }
-/* Expanders */
 [data-theme="dark"] .streamlit-expanderHeader,
 [data-theme="dark"] details summary {
     background-color: #FFFFFF !important;
@@ -90,7 +83,6 @@ MEF_CSS = """
     color: #17203A !important;
     border-color: #CED5E8 !important;
 }
-/* Inputs */
 [data-theme="dark"] input,
 [data-theme="dark"] .stTextInput input {
     background-color: #FFFFFF !important;
@@ -100,7 +92,6 @@ MEF_CSS = """
 [data-theme="dark"] .stTextInput label,
 [data-theme="dark"] .stSelectbox label,
 [data-theme="dark"] label { color: #556080 !important; }
-/* Tabs */
 [data-theme="dark"] [data-baseweb="tab-list"],
 [data-theme="dark"] [data-baseweb="tab"],
 [data-theme="dark"] [data-baseweb="tab-panel"] {
@@ -111,7 +102,6 @@ MEF_CSS = """
     color: #1D3D8F !important;
     border-bottom-color: #1D3D8F !important;
 }
-/* Tables */
 [data-theme="dark"] table,
 [data-theme="dark"] tbody,
 [data-theme="dark"] tr,
@@ -127,13 +117,11 @@ MEF_CSS = """
 [data-theme="dark"] tr:nth-child(even) td {
     background-color: #F5F6F8 !important;
 }
-/* Alerts */
 [data-theme="dark"] .stAlert,
 [data-theme="dark"] .stAlert > div {
     background-color: #E8EDF7 !important;
     color: #17203A !important;
 }
-/* Selectbox dropdown */
 [data-theme="dark"] [data-baseweb="select"] div,
 [data-theme="dark"] [data-baseweb="popover"] * {
     background-color: #FFFFFF !important;
@@ -450,6 +438,42 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
 }
 
 /* ══════════════════════════════════════════════════════════
+   FIX 1 — SIDEBAR TOGGLE ARROWS
+   The wildcard rule above paints SVG paths white, making the
+   arrows invisible.  We restore them here with explicit color.
+   The collapse button sits inside the sidebar; the re-open
+   button ("collapsedControl") sits outside — style both.
+   ══════════════════════════════════════════════════════════ */
+/* Collapse button (inside sidebar) */
+[data-testid="stSidebarCollapseButton"] button {
+    background-color: rgba(255,255,255,.10) !important;
+    border-radius: 4px !important;
+}
+[data-testid="stSidebarCollapseButton"] button svg {
+    color: #FFFFFF !important;
+    fill: #FFFFFF !important;
+}
+/* Re-open button (outside sidebar, shown when sidebar is collapsed) */
+[data-testid="collapsedControl"] {
+    background-color: #132B6B !important;
+    border-right: 3px solid #C49B1D !important;
+    border-radius: 0 6px 6px 0 !important;
+}
+[data-testid="collapsedControl"] button svg {
+    color: #FFFFFF !important;
+    fill: #FFFFFF !important;
+}
+[data-testid="collapsedControl"] button {
+    color: #FFFFFF !important;
+}
+/* Hide the keyboard shortcut tooltip text that leaks through */
+[data-testid="stSidebarCollapseButton"] span,
+[data-testid="collapsedControl"] span {
+    color: transparent !important;
+    font-size: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════
    FOOTER
    ══════════════════════════════════════════════════════════ */
 .mef-footer {
@@ -459,12 +483,16 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
     flex-wrap: wrap; gap: 4px; background-color: #FFFFFF;
 }
 
-/* ── Hide Streamlit chrome (keep sidebar toggle arrows visible) ── */
-#MainMenu                              { visibility: hidden; }
-footer                                 { visibility: hidden; }
-[data-testid="stToolbar"]             { visibility: hidden; }
-[data-testid="stDecoration"]          { display: none; }
-[data-testid="stStatusWidget"]        { visibility: hidden; }
+/* ══════════════════════════════════════════════════════════
+   FIX 2 — STRIPE AT THE TOP
+   stToolbar with visibility:hidden kept its height (the stripe).
+   display:none removes it entirely.  stDecoration also hidden.
+   ══════════════════════════════════════════════════════════ */
+#MainMenu                              { display: none !important; }
+footer                                 { display: none !important; }
+[data-testid="stToolbar"]             { display: none !important; }
+[data-testid="stDecoration"]          { display: none !important; }
+[data-testid="stStatusWidget"]        { display: none !important; }
 </style>
 """
 
