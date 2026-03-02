@@ -38,7 +38,8 @@ RN_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/output_mit_normativa/allegati"
 # ⚠️  Replace the value below with the actual raw URL of your file, e.g.:
 #   https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/Logo_RGS_orizzontale.png
 GITHUB_LOGO_URL = (
-"https://raw.github.com/mcaruso17/cupdf/blob/main/Logo%20RGS%20orizzontale.png"
+    "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/"
+    "Logo_RGS_orizzontale.png"
 )
 
 # Local fallback (used if the GitHub fetch fails or during local dev)
@@ -498,10 +499,12 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
     flex-wrap: wrap; gap: 4px; background-color: #FFFFFF;
 }
 
-/* ── Hide Streamlit chrome ── */
-#MainMenu { visibility: hidden; }
-footer    { visibility: hidden; }
-header    { visibility: hidden; }
+/* ── Hide Streamlit chrome (keep sidebar toggle arrows visible) ── */
+#MainMenu                              { visibility: hidden; }
+footer                                 { visibility: hidden; }
+[data-testid="stToolbar"]             { visibility: hidden; }
+[data-testid="stDecoration"]          { display: none; }
+[data-testid="stStatusWidget"]        { visibility: hidden; }
 </style>
 """
 
