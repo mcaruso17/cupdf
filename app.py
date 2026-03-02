@@ -46,7 +46,7 @@ MEF_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap');
 
-/* ── Design tokens ── */
+/* -- Design tokens -- */
 :root {
     --mef-blue:       #1D3D8F;
     --mef-blue-dark:  #132B6B;
@@ -56,9 +56,7 @@ MEF_CSS = """
     --font: 'Segoe UI', 'Source Sans 3', sans-serif;
 }
 
-/* ══════════════════════════════════════════════════════════
-   DARK-MODE NEUTRALISATION
-   ══════════════════════════════════════════════════════════ */
+/* ---- DARK-MODE NEUTRALISATION ---- */
 [data-theme="dark"] .main,
 [data-theme="dark"] .block-container,
 [data-theme="dark"] section[data-testid="stMain"],
@@ -69,7 +67,7 @@ MEF_CSS = """
 }
 [data-theme="dark"] p,
 [data-theme="dark"] span:not([class*="mef-"]):not([class*="sb-"]):not([class*="doc-"]):not([class*="tag-"]),
-[data-theme="dark"] div:not([class*="mef-"]):not([class*="sb-"]):not([class*="doc-"]):not([class*="card-"]),
+[data-theme="dark"] div:not([class*="mef-"]):not([class*="sb-"]):not([class*="card-"]),
 [data-theme="dark"] li { color: #17203A !important; }
 [data-theme="dark"] .streamlit-expanderHeader,
 [data-theme="dark"] details summary {
@@ -137,9 +135,7 @@ MEF_CSS = """
     color: #FFFFFF !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   BASE
-   ══════════════════════════════════════════════════════════ */
+/* ---- BASE ---- */
 html, body, [class*="css"] { font-family: var(--font) !important; }
 .main,
 section[data-testid="stMain"],
@@ -154,9 +150,7 @@ section[data-testid="stMain"],
     background-color: #FFFFFF !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   INSTITUTIONAL HEADER
-   ══════════════════════════════════════════════════════════ */
+/* ---- INSTITUTIONAL HEADER ---- */
 .mef-header {
     background: #1D3D8F;
     border-bottom: 4px solid #C49B1D;
@@ -199,9 +193,7 @@ section[data-testid="stMain"],
     text-transform: uppercase; margin-top: 3px;
 }
 
-/* ══════════════════════════════════════════════════════════
-   PAGE TITLE / DIVIDER
-   ══════════════════════════════════════════════════════════ */
+/* ---- PAGE TITLE / DIVIDER ---- */
 .mef-rule { border: none; border-top: 1px solid #CED5E8; margin: 1.25rem 0; }
 .mef-page-title {
     font-size: 21px; font-weight: 700; color: #1D3D8F;
@@ -214,9 +206,7 @@ section[data-testid="stMain"],
     font-family: var(--font);
 }
 
-/* ══════════════════════════════════════════════════════════
-   TAGS
-   ══════════════════════════════════════════════════════════ */
+/* ---- TAGS ---- */
 .mef-tag {
     display: inline-block; padding: 2px 7px; border-radius: 2px;
     font-size: 10px; font-weight: 700; letter-spacing: .07em;
@@ -225,9 +215,7 @@ section[data-testid="stMain"],
 .tag-at { background-color: #1D3D8F; color: #FFFFFF; }
 .tag-rn { background-color: #C49B1D; color: #FFFFFF; }
 
-/* ══════════════════════════════════════════════════════════
-   STATUS CARDS
-   ══════════════════════════════════════════════════════════ */
+/* ---- STATUS CARDS ---- */
 .mef-status-row { display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .mef-status-card {
     flex: 1; min-width: 200px; border-radius: 3px;
@@ -251,9 +239,7 @@ section[data-testid="stMain"],
 }
 .mef-status-card.error .mef-status-tag { background: #CC2222; }
 
-/* ══════════════════════════════════════════════════════════
-   SEARCH INPUT
-   ══════════════════════════════════════════════════════════ */
+/* ---- SEARCH INPUT ---- */
 .stTextInput > div > div > input {
     border: 1.5px solid #CED5E8 !important;
     border-radius: 3px !important; font-size: 14px !important;
@@ -271,9 +257,7 @@ section[data-testid="stMain"],
     color: #556080 !important; font-family: var(--font) !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   RESULT BANNER
-   ══════════════════════════════════════════════════════════ */
+/* ---- RESULT BANNER ---- */
 .mef-result-banner {
     background-color: #EDF2FF; border-left: 4px solid #1D3D8F;
     border-radius: 0 3px 3px 0; padding: 10px 16px;
@@ -283,9 +267,7 @@ section[data-testid="stMain"],
 }
 .mef-result-banner strong { font-weight: 700; }
 
-/* ══════════════════════════════════════════════════════════
-   SELECTBOX
-   ══════════════════════════════════════════════════════════ */
+/* ---- SELECTBOX ---- */
 .stSelectbox > label {
     font-size: 11px !important; font-weight: 700 !important;
     text-transform: uppercase !important; letter-spacing: .07em !important;
@@ -295,9 +277,7 @@ section[data-testid="stMain"],
     background-color: #FFFFFF !important; color: #17203A !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   TABS
-   ══════════════════════════════════════════════════════════ */
+/* ---- TABS ---- */
 .stTabs [data-baseweb="tab-list"] {
     border-bottom: 2px solid #CED5E8 !important;
     gap: 0 !important; background-color: #FFFFFF !important;
@@ -318,9 +298,7 @@ section[data-testid="stMain"],
     padding-top: 1.25rem !important; background-color: #FFFFFF !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   EXPANDER / DOCUMENT CARDS
-   ══════════════════════════════════════════════════════════ */
+/* ---- EXPANDER / DOCUMENT CARDS ---- */
 .streamlit-expanderHeader, details summary {
     background-color: #FFFFFF !important;
     border: 1px solid #CED5E8 !important; border-radius: 3px !important;
@@ -337,9 +315,7 @@ section[data-testid="stMain"],
     background-color: #FFFFFF !important; color: #17203A !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   DOCUMENT FIELDS
-   ══════════════════════════════════════════════════════════ */
+/* ---- DOCUMENT FIELDS ---- */
 .doc-label {
     font-size: 10px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .07em; color: #556080; margin-bottom: 2px;
@@ -356,9 +332,7 @@ section[data-testid="stMain"],
     font-weight: 700; letter-spacing: .05em;
 }
 
-/* ══════════════════════════════════════════════════════════
-   LINK BUTTON
-   ══════════════════════════════════════════════════════════ */
+/* ---- LINK BUTTON ---- */
 .mef-link-btn {
     display: inline-flex; align-items: center; gap: 6px;
     background-color: #1D3D8F; color: #FFFFFF !important;
@@ -371,9 +345,7 @@ section[data-testid="stMain"],
     background-color: #132B6B !important; color: #FFFFFF !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   CARD FOOTER
-   ══════════════════════════════════════════════════════════ */
+/* ---- CARD FOOTER ---- */
 .card-footer {
     font-size: 10.5px; color: #556080;
     margin-top: 10px; padding-top: 8px;
@@ -381,9 +353,7 @@ section[data-testid="stMain"],
     font-family: var(--font); background-color: #FFFFFF;
 }
 
-/* ══════════════════════════════════════════════════════════
-   TABLE
-   ══════════════════════════════════════════════════════════ */
+/* ---- TABLE ---- */
 table {
     font-size: 12.5px !important; border-collapse: collapse !important;
     width: 100% !important; font-family: var(--font) !important;
@@ -402,9 +372,7 @@ td {
 }
 tr:nth-child(even) td { background-color: #F5F6F8 !important; }
 
-/* ══════════════════════════════════════════════════════════
-   SIDEBAR  (intentionally dark — institutional blue band)
-   ══════════════════════════════════════════════════════════ */
+/* ---- SIDEBAR ---- */
 [data-testid="stSidebar"] {
     background-color: #132B6B !important;
     border-right: 3px solid #C49B1D !important;
@@ -437,14 +405,7 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
     text-transform: uppercase; padding: 2px 5px; border-radius: 2px; margin-right: 4px;
 }
 
-/* ══════════════════════════════════════════════════════════
-   FIX 1 — SIDEBAR TOGGLE ARROWS
-   The wildcard rule above paints SVG paths white, making the
-   arrows invisible.  We restore them here with explicit color.
-   The collapse button sits inside the sidebar; the re-open
-   button ("collapsedControl") sits outside — style both.
-   ══════════════════════════════════════════════════════════ */
-/* Collapse button (inside sidebar) */
+/* ---- FIX: SIDEBAR TOGGLE ARROWS ---- */
 [data-testid="stSidebarCollapseButton"] button {
     background-color: rgba(255,255,255,.10) !important;
     border-radius: 4px !important;
@@ -453,61 +414,8 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
     color: #FFFFFF !important;
     fill: #FFFFFF !important;
 }
-/* Re-open button (outside sidebar, shown when sidebar is collapsed) */
-[data-testid="collapsedControl"] {
-    background-color: #132B6B !important;
-    border-right: 3px solid #C49B1D !important;
-    border-radius: 0 6px 6px 0 !important;
-}
-[data-testid="collapsedControl"] button svg {
-    color: #FFFFFF !important;
-    fill: #FFFFFF !important;
-}
-[data-testid="collapsedControl"] button {
-    color: #FFFFFF !important;
-}
-/* Hide the keyboard shortcut tooltip text that leaks through */
-[data-testid="stSidebarCollapseButton"] span,
-[data-testid="collapsedControl"] span {
-    color: transparent !important;
-    font-size: 0 !important;
-}
 
-/* ══════════════════════════════════════════════════════════
-   FOOTER
-   ══════════════════════════════════════════════════════════ */
-.mef-footer {
-    border-top: 1px solid #CED5E8; margin-top: 3rem; padding-top: 1rem;
-    font-size: 11px; color: #556080; font-family: var(--font);
-    display: flex; justify-content: space-between;
-    flex-wrap: wrap; gap: 4px; background-color: #FFFFFF;
-}
-
-/* ══════════════════════════════════════════════════════════
-   FIX 2 — STRIPE AT THE TOP
-   stToolbar with visibility:hidden kept its height (the stripe).
-   display:none removes it entirely.  stDecoration also hidden.
-   ══════════════════════════════════════════════════════════ */
-#MainMenu                              { display: none !important; }
-footer                                 { display: none !important; }
-[data-testid="stToolbar"]             { display: none !important; }
-[data-testid="stDecoration"]          { display: none !important; }
-[data-testid="stStatusWidget"]        { display: none !important; }
-</style>
-"""
-
-st.markdown(MEF_CSS, unsafe_allow_html=True)
-
-/* ══ FIX — STREAMLIT NATIVE HEADER BAR ══ */
-header[data-testid="stHeader"] {
-    background-color: transparent !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-}
-
-/* ══ FIX — SIDEBAR REOPEN BUTTON ══ */
+/* ---- FIX: SIDEBAR REOPEN BUTTON ---- */
 [data-testid="collapsedControl"] {
     background-color: #132B6B !important;
     border-right: 3px solid #C49B1D !important;
@@ -528,11 +436,43 @@ header[data-testid="stHeader"] {
     fill: #FFFFFF !important;
     stroke: #FFFFFF !important;
 }
+[data-testid="collapsedControl"] span {
+    color: transparent !important;
+    font-size: 0 !important;
+}
+
+/* ---- FIX: STREAMLIT NATIVE HEADER BAR (white stripe) ---- */
+header[data-testid="stHeader"] {
+    background-color: transparent !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* ---- HIDE STREAMLIT CHROME ---- */
+#MainMenu                              { display: none !important; }
+footer                                 { display: none !important; }
+[data-testid="stToolbar"]             { display: none !important; }
+[data-testid="stDecoration"]          { display: none !important; }
+[data-testid="stStatusWidget"]        { display: none !important; }
+
+/* ---- FOOTER ---- */
+.mef-footer {
+    border-top: 1px solid #CED5E8; margin-top: 3rem; padding-top: 1rem;
+    font-size: 11px; color: #556080; font-family: var(--font);
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 4px; background-color: #FFFFFF;
+}
+</style>
+"""
+
+st.markdown(MEF_CSS, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  FUNZIONI URL ONEDRIVE
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 def encode_path(path):
     return quote(path, safe="")
@@ -556,9 +496,9 @@ def onedrive_link_rn(cartella, filename):
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  CARICAMENTO DATI
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 @st.cache_data
 def load_at_data():
@@ -598,9 +538,9 @@ at_disponibile = not df_at.empty
 rn_disponibile = not df_rn.empty
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  INSTITUTIONAL HEADER
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 st.markdown("""
 <div class="mef-header">
@@ -619,9 +559,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  PAGE HEADING
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 st.markdown("""
 <div class="mef-page-title">Ricerca per CUP</div>
@@ -634,9 +574,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  STATUS INDICATORS
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 at_class = "ok" if at_disponibile else "error"
 rn_class = "ok" if rn_disponibile else "error"
@@ -667,11 +607,11 @@ st.markdown(f"""
 st.markdown('<hr class="mef-rule">', unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  HELPERS
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
-def field(label: str, value: str, mono: bool = False) -> str:
+def field(label, value, mono=False):
     if not value or str(value).strip() in ("", "nan", "None"):
         return ""
     val_class = "doc-cup" if mono else ""
@@ -680,13 +620,13 @@ def field(label: str, value: str, mono: bool = False) -> str:
         f'<div class="doc-value {val_class}">{value}</div>'
     )
 
-def open_link_html(url: str) -> str:
+def open_link_html(url):
     return (
         f'<a class="mef-link-btn" href="{url}" target="_blank">'
         f'&#8599;&nbsp; Apri documento su OneDrive</a>'
     )
 
-def card_footer(tag: str, tag_class: str, source_name: str, extra: str = "") -> str:
+def card_footer(tag, tag_class, source_name, extra=""):
     return (
         f'<div class="card-footer">'
         f'<span class="mef-tag {tag_class}" style="font-size:9px">{tag}</span>'
@@ -696,9 +636,9 @@ def card_footer(tag: str, tag_class: str, source_name: str, extra: str = "") -> 
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  SEARCH INPUT
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 query = st.text_input(
     "Codice CUP (o parte di esso)",
@@ -706,9 +646,9 @@ query = st.text_input(
 )
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  SEARCH & RESULTS
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 if query:
     query_clean = query.strip().upper()
@@ -758,7 +698,7 @@ if query:
             f"Riepilogo  ({len(results_at) + len(results_rn)})",
         ])
 
-        # ═══ TAB AT ═══════════════════════════════════════════════
+        # === TAB AT ===
         with tab_at:
             if results_at.empty:
                 st.info("Nessun risultato da Amministrazione Trasparente.")
@@ -771,7 +711,7 @@ if query:
                                 field("CUP", row["cup"], mono=True)
                                 + field("Capitolo", str(row.get("cap", "")))
                                 + field("Piano Gestionale", str(row.get("pg", "")))
-                                + field("Stato — Cap. — Piano", str(row.get("stacappg", ""))),
+                                + field("Stato - Cap. - Piano", str(row.get("stacappg", ""))),
                                 unsafe_allow_html=True,
                             )
                         with col2:
@@ -788,7 +728,7 @@ if query:
                             unsafe_allow_html=True,
                         )
 
-        # ═══ TAB RN ═══════════════════════════════════════════════
+        # === TAB RN ===
         with tab_rn:
             if results_rn.empty:
                 st.info("Nessun risultato da Ricerca Normativa.")
@@ -825,7 +765,7 @@ if query:
                             unsafe_allow_html=True,
                         )
 
-        # ═══ TAB RIEPILOGO ════════════════════════════════════════
+        # === TAB RIEPILOGO ===
         with tab_all:
             st.markdown(
                 "<p style='font-size:13px;color:#556080;margin-bottom:1rem;"
@@ -866,9 +806,9 @@ if query:
                 st.table(display_rn.reset_index(drop=True))
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  FOOTER
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 st.markdown(
     f'<div class="mef-footer">'
@@ -884,16 +824,16 @@ st.markdown(
 )
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 #  SIDEBAR
-# ═══════════════════════════════════════════════════════════════════════
+# ===================================================================
 
 with st.sidebar:
     st.markdown(
         "<div style='padding:14px 0 8px 0;font-size:14px;font-weight:700;"
         "color:#FFFFFF;font-family:Segoe UI,sans-serif;"
         "border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:4px'>"
-        "MEF &nbsp;<span style='color:#C49B1D'>·</span>&nbsp; RGS"
+        "MEF &nbsp;<span style='color:#C49B1D'>&#183;</span>&nbsp; RGS"
         "<br><span style='font-size:9.5px;font-weight:300;opacity:.55;"
         "letter-spacing:.07em;text-transform:uppercase'>"
         "Statistiche Database</span></div>",
@@ -920,7 +860,7 @@ with st.sidebar:
                 f"<div style='font-size:11px;opacity:.72;padding:2px 0;"
                 f"font-family:Segoe UI,sans-serif'>"
                 f"<span class='sb-type-badge'>{tipo}</span>"
-                f"{len(subset):,} rec &nbsp;·&nbsp; {subset['CUP'].nunique():,} CUP"
+                f"{len(subset):,} rec &nbsp;&#183;&nbsp; {subset['CUP'].nunique():,} CUP"
                 f"</div>",
                 unsafe_allow_html=True,
             )
