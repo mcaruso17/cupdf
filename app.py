@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 import os
+import base64
 from datetime import datetime
 from urllib.parse import quote
+from pathlib import Path
 
 start_time = datetime.now()
 start_time_str = start_time.strftime("%d/%m/%Y %H:%M:%S")
@@ -30,6 +32,22 @@ ONEDRIVE_PATH_BASE = (
 AT_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/allegati at"
 RN_ONEDRIVE_PATH = ONEDRIVE_PATH_BASE + "/output_mit_normativa/allegati"
 
+# ── RGS Logo ─────────────────────────────────────────────────────────
+# Place Logo_RGS_orizzontale.png next to this script (or in assets/).
+_LOGO_CANDIDATES = [
+    Path(__file__).parent / "Logo_RGS_orizzontale.png",
+    Path("Logo_RGS_orizzontale.png"),
+    Path("assets/Logo_RGS_orizzontale.png"),
+]
+
+def _load_logo_b64():
+    for p in _LOGO_CANDIDATES:
+        if p.exists():
+            return base64.b64encode(p.read_bytes()).decode()
+    return None
+
+RGS_LOGO_B64 = _load_logo_b64()
+
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║          FINE IMPOSTAZIONI                                          ║
 # ╚══════════════════════════════════════════════════════════════════════╝
@@ -40,457 +58,431 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-BADGE_AT = "AT"
-BADGE_RN = "RN"
-
 # ═══════════════════════════════════════════════════════════════════════
 #  MEF / RGS VISUAL IDENTITY — CSS
-#  Colors from the manual:
-#    Blue  Pantone 287 C  →  #1D3D8F  (approx.)
-#    Gold  Pantone 131 CVC → #C49B1D  (approx.)
+#  All custom elements carry explicit hardcoded colors so that
+#  Streamlit's dark-mode theme cannot bleed through.
 # ═══════════════════════════════════════════════════════════════════════
 MEF_CSS = """
 <style>
-/* ── Google Fonts fallback: Segoe UI is the spec font ── */
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap');
 
+/* ── Design tokens ── */
 :root {
     --mef-blue:       #1D3D8F;
     --mef-blue-dark:  #132B6B;
     --mef-blue-light: #E8EDF7;
     --mef-gold:       #C49B1D;
-    --mef-gold-light: #F7F1DC;
-    --mef-white:      #FFFFFF;
-    --mef-off-white:  #F5F6F8;
-    --mef-border:     #D1D9EC;
-    --mef-text:       #1A1A2E;
-    --mef-text-muted: #5A6585;
-    --mef-at-tag:     #1D3D8F;
-    --mef-rn-tag:     #C49B1D;
-    --font:           'Segoe UI', 'Source Sans 3', sans-serif;
+    --mef-border:     #CED5E8;
+    --font: 'Segoe UI', 'Source Sans 3', sans-serif;
 }
 
-/* ── Base reset ── */
-html, body, [class*="css"] {
-    font-family: var(--font) !important;
-    color: var(--mef-text);
+/* ══════════════════════════════════════════════════════════
+   DARK-MODE NEUTRALISATION
+   Re-force all Streamlit dark overrides back to white/light.
+   ══════════════════════════════════════════════════════════ */
+[data-theme="dark"] .main,
+[data-theme="dark"] .block-container,
+[data-theme="dark"] section[data-testid="stMain"],
+[data-theme="dark"] section[data-testid="stMain"] > div,
+[data-theme="dark"] [data-testid="stAppViewContainer"] {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+}
+[data-theme="dark"] p,
+[data-theme="dark"] span:not([class*="mef-"]):not([class*="sb-"]):not([class*="doc-"]):not([class*="tag-"]),
+[data-theme="dark"] div:not([class*="mef-"]):not([class*="sb-"]):not([class*="doc-"]):not([class*="card-"]),
+[data-theme="dark"] li { color: #17203A !important; }
+/* Expanders */
+[data-theme="dark"] .streamlit-expanderHeader,
+[data-theme="dark"] details summary {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+    border-color: #CED5E8 !important;
+}
+[data-theme="dark"] .streamlit-expanderContent,
+[data-theme="dark"] details > div {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+    border-color: #CED5E8 !important;
+}
+/* Inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] .stTextInput input {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+    border-color: #CED5E8 !important;
+}
+[data-theme="dark"] .stTextInput label,
+[data-theme="dark"] .stSelectbox label,
+[data-theme="dark"] label { color: #556080 !important; }
+/* Tabs */
+[data-theme="dark"] [data-baseweb="tab-list"],
+[data-theme="dark"] [data-baseweb="tab"],
+[data-theme="dark"] [data-baseweb="tab-panel"] {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+}
+[data-theme="dark"] [aria-selected="true"] {
+    color: #1D3D8F !important;
+    border-bottom-color: #1D3D8F !important;
+}
+/* Tables */
+[data-theme="dark"] table,
+[data-theme="dark"] tbody,
+[data-theme="dark"] tr,
+[data-theme="dark"] td {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+    border-color: #CED5E8 !important;
+}
+[data-theme="dark"] th {
+    background-color: #1D3D8F !important;
+    color: #FFFFFF !important;
+}
+[data-theme="dark"] tr:nth-child(even) td {
+    background-color: #F5F6F8 !important;
+}
+/* Alerts */
+[data-theme="dark"] .stAlert,
+[data-theme="dark"] .stAlert > div {
+    background-color: #E8EDF7 !important;
+    color: #17203A !important;
+}
+/* Selectbox dropdown */
+[data-theme="dark"] [data-baseweb="select"] div,
+[data-theme="dark"] [data-baseweb="popover"] * {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+}
+/* Keep sidebar dark */
+[data-theme="dark"] [data-testid="stSidebar"],
+[data-theme="dark"] [data-testid="stSidebar"] * {
+    background-color: #132B6B !important;
+    color: rgba(255,255,255,0.82) !important;
+}
+[data-theme="dark"] [data-testid="stSidebar"] [data-testid="stMetricValue"] {
+    color: #FFFFFF !important;
 }
 
-/* ── Remove default Streamlit padding ── */
+/* ══════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════ */
+html, body, [class*="css"] { font-family: var(--font) !important; }
+.main,
+section[data-testid="stMain"],
+[data-testid="stAppViewContainer"] {
+    background-color: #FFFFFF !important;
+    color: #17203A !important;
+}
 .block-container {
     padding-top: 0 !important;
     padding-bottom: 2rem !important;
     max-width: 1200px !important;
+    background-color: #FFFFFF !important;
 }
 
-/* ── INSTITUTIONAL HEADER BAND ── */
+/* ══════════════════════════════════════════════════════════
+   INSTITUTIONAL HEADER
+   ══════════════════════════════════════════════════════════ */
 .mef-header {
-    background: var(--mef-blue);
-    color: white;
-    padding: 0;
+    background: #1D3D8F;
+    border-bottom: 4px solid #C49B1D;
     margin: -1rem -1rem 0 -1rem;
-    border-bottom: 4px solid var(--mef-gold);
 }
 .mef-header-inner {
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 18px 40px;
+    padding: 14px 40px;
 }
-.mef-logo-circle {
-    width: 52px;
-    height: 52px;
-    border: 2.5px solid var(--mef-gold);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 700;
-    color: white;
-    letter-spacing: -1px;
+/* The logo PNG has a black background; invert it to white for the blue band */
+.mef-logo-img {
+    height: 46px;
+    width: auto;
+    filter: brightness(0) invert(1);
     flex-shrink: 0;
-    position: relative;
 }
-.mef-logo-arc {
-    position: absolute;
-    right: -4px;
-    top: -4px;
-    width: 26px;
-    height: 26px;
-    border: 2.5px solid var(--mef-gold);
-    border-radius: 50%;
-    border-left-color: transparent;
-    border-bottom-color: transparent;
-    transform: rotate(45deg);
+.mef-logo-fallback {
+    width: 52px; height: 52px;
+    border: 2.5px solid #C49B1D; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 700; color: #FFFFFF;
+    letter-spacing: -1px; flex-shrink: 0;
 }
-.mef-header-text {}
-.mef-header-title {
-    font-size: 13px;
-    font-weight: 300;
-    letter-spacing: 0.05em;
-    color: rgba(255,255,255,0.75);
-    line-height: 1.2;
-    margin-bottom: 2px;
+.mef-header-ministry {
+    font-size: 11px; font-weight: 300;
+    color: rgba(255,255,255,0.62); letter-spacing: .04em;
 }
 .mef-header-dept {
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
-    line-height: 1.2;
+    font-size: 16px; font-weight: 700;
+    color: #FFFFFF; line-height: 1.2;
 }
 .mef-header-sub {
-    font-size: 11px;
-    font-weight: 300;
-    color: rgba(255,255,255,0.6);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-top: 3px;
+    font-size: 10px; font-weight: 300;
+    color: rgba(255,255,255,0.48);
+    letter-spacing: .07em; text-transform: uppercase; margin-top: 3px;
 }
-.mef-header-right {
-    margin-left: auto;
-    text-align: right;
-}
+.mef-header-right { margin-left: auto; text-align: right; }
 .mef-app-name {
-    font-size: 20px;
-    font-weight: 700;
-    color: white;
-    letter-spacing: 0.02em;
+    font-size: 22px; font-weight: 700;
+    color: #FFFFFF; letter-spacing: .03em; line-height: 1;
 }
-.mef-app-desc {
-    font-size: 11px;
-    color: rgba(255,255,255,0.6);
-    font-weight: 300;
-    letter-spacing: 0.05em;
+.mef-app-tagline {
+    font-size: 10px; color: rgba(255,255,255,0.48);
+    font-weight: 300; letter-spacing: .08em;
+    text-transform: uppercase; margin-top: 3px;
 }
 
-/* ── DIVIDER ── */
-.mef-rule {
-    border: none;
-    border-top: 1px solid var(--mef-border);
-    margin: 1.5rem 0;
-}
-
-/* ── PAGE TITLE ── */
+/* ══════════════════════════════════════════════════════════
+   PAGE TITLE / DIVIDER
+   ══════════════════════════════════════════════════════════ */
+.mef-rule { border: none; border-top: 1px solid #CED5E8; margin: 1.25rem 0; }
 .mef-page-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--mef-blue);
-    margin: 1.5rem 0 0.25rem 0;
-    letter-spacing: -0.01em;
+    font-size: 21px; font-weight: 700; color: #1D3D8F;
+    margin: 1.5rem 0 .2rem 0; letter-spacing: -.01em;
+    font-family: var(--font);
 }
 .mef-page-subtitle {
-    font-size: 13px;
-    color: var(--mef-text-muted);
-    margin-bottom: 1.5rem;
+    font-size: 13px; color: #556080;
+    margin-bottom: 1.25rem; line-height: 1.5;
+    font-family: var(--font);
 }
 
-/* ── STATUS BADGES ── */
-.mef-status-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
+/* ══════════════════════════════════════════════════════════
+   TAGS
+   ══════════════════════════════════════════════════════════ */
+.mef-tag {
+    display: inline-block; padding: 2px 7px; border-radius: 2px;
+    font-size: 10px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; font-family: var(--font); line-height: 1.6;
 }
+.tag-at { background-color: #1D3D8F; color: #FFFFFF; }
+.tag-rn { background-color: #C49B1D; color: #FFFFFF; }
+
+/* ══════════════════════════════════════════════════════════
+   STATUS CARDS
+   ══════════════════════════════════════════════════════════ */
+.mef-status-row { display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .mef-status-card {
-    flex: 1;
-    min-width: 220px;
-    border-radius: 4px;
-    padding: 10px 16px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid;
-}
-.mef-status-card.ok {
-    background: #EDF2FF;
-    border-color: var(--mef-blue);
-    color: var(--mef-blue-dark);
+    flex: 1; min-width: 200px; border-radius: 3px;
+    padding: 9px 14px; font-size: 13px; font-family: var(--font);
+    display: flex; align-items: center; gap: 10px; border: 1px solid;
+    background-color: #EDF2FF; border-color: #1D3D8F; color: #132B6B;
 }
 .mef-status-card.error {
-    background: #FFF3F3;
-    border-color: #CC2222;
-    color: #8B0000;
+    background-color: #FFF3F3; border-color: #CC2222; color: #8B0000;
 }
 .mef-status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: #1D3D8F;
 }
-.mef-status-card.ok   .mef-status-dot { background: var(--mef-blue); }
 .mef-status-card.error .mef-status-dot { background: #CC2222; }
 .mef-status-tag {
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 2px 6px;
-    border-radius: 2px;
-    margin-left: auto;
-    flex-shrink: 0;
+    font-size: 9px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; padding: 2px 6px; border-radius: 2px;
+    margin-left: auto; flex-shrink: 0;
+    background: #1D3D8F; color: #FFFFFF;
 }
-.mef-status-card.ok   .mef-status-tag { background: var(--mef-blue); color: white; }
-.mef-status-card.error .mef-status-tag { background: #CC2222; color: white; }
+.mef-status-card.error .mef-status-tag { background: #CC2222; }
 
-/* ── SEARCH BOX ── */
+/* ══════════════════════════════════════════════════════════
+   SEARCH INPUT
+   ══════════════════════════════════════════════════════════ */
 .stTextInput > div > div > input {
-    border: 1.5px solid var(--mef-border) !important;
-    border-radius: 3px !important;
-    font-size: 14px !important;
-    padding: 10px 14px !important;
-    transition: border-color 0.2s;
-    font-family: var(--font) !important;
+    border: 1.5px solid #CED5E8 !important;
+    border-radius: 3px !important; font-size: 14px !important;
+    padding: 10px 14px !important; font-family: var(--font) !important;
+    background-color: #FFFFFF !important; color: #17203A !important;
+    transition: border-color .2s;
 }
 .stTextInput > div > div > input:focus {
-    border-color: var(--mef-blue) !important;
-    box-shadow: 0 0 0 3px rgba(29,61,143,0.12) !important;
+    border-color: #1D3D8F !important;
+    box-shadow: 0 0 0 3px rgba(29,61,143,.10) !important;
 }
 .stTextInput > label {
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: var(--mef-text-muted) !important;
+    font-size: 11px !important; font-weight: 700 !important;
+    text-transform: uppercase !important; letter-spacing: .07em !important;
+    color: #556080 !important; font-family: var(--font) !important;
 }
 
-/* ── RESULT BANNER ── */
+/* ══════════════════════════════════════════════════════════
+   RESULT BANNER
+   ══════════════════════════════════════════════════════════ */
 .mef-result-banner {
-    background: var(--mef-blue-light);
-    border-left: 4px solid var(--mef-blue);
-    border-radius: 0 3px 3px 0;
-    padding: 10px 16px;
-    margin-bottom: 1.25rem;
-    font-size: 13.5px;
-    color: var(--mef-blue-dark);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
+    background-color: #EDF2FF; border-left: 4px solid #1D3D8F;
+    border-radius: 0 3px 3px 0; padding: 10px 16px;
+    margin-bottom: 1.25rem; font-size: 13.5px; font-family: var(--font);
+    color: #132B6B; display: flex; align-items: center;
+    gap: 16px; flex-wrap: wrap;
 }
 .mef-result-banner strong { font-weight: 700; }
-.mef-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 2px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-.tag-at { background: var(--mef-blue);  color: white; }
-.tag-rn { background: var(--mef-gold);  color: white; }
 
-/* ── SELECT BOX ── */
+/* ══════════════════════════════════════════════════════════
+   SELECTBOX
+   ══════════════════════════════════════════════════════════ */
 .stSelectbox > label {
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: var(--mef-text-muted) !important;
+    font-size: 11px !important; font-weight: 700 !important;
+    text-transform: uppercase !important; letter-spacing: .07em !important;
+    color: #556080 !important; font-family: var(--font) !important;
+}
+.stSelectbox [data-baseweb="select"] div {
+    background-color: #FFFFFF !important; color: #17203A !important;
 }
 
-/* ── TABS ── */
+/* ══════════════════════════════════════════════════════════
+   TABS
+   ══════════════════════════════════════════════════════════ */
 .stTabs [data-baseweb="tab-list"] {
-    border-bottom: 2px solid var(--mef-border) !important;
-    gap: 0 !important;
-    background: transparent !important;
+    border-bottom: 2px solid #CED5E8 !important;
+    gap: 0 !important; background-color: #FFFFFF !important;
 }
 .stTabs [data-baseweb="tab"] {
-    font-family: var(--font) !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: var(--mef-text-muted) !important;
-    padding: 10px 20px !important;
-    border-radius: 0 !important;
+    font-family: var(--font) !important; font-size: 13px !important;
+    font-weight: 600 !important; color: #556080 !important;
+    padding: 10px 20px !important; border-radius: 0 !important;
     border-bottom: 3px solid transparent !important;
-    margin-bottom: -2px !important;
-    letter-spacing: 0.01em;
-    background: transparent !important;
-    text-transform: none !important;
+    margin-bottom: -2px !important; background-color: #FFFFFF !important;
 }
 .stTabs [aria-selected="true"] {
-    color: var(--mef-blue) !important;
-    border-bottom-color: var(--mef-blue) !important;
-    background: transparent !important;
+    color: #1D3D8F !important;
+    border-bottom-color: #1D3D8F !important;
+    background-color: #FFFFFF !important;
 }
 .stTabs [data-baseweb="tab-panel"] {
-    padding-top: 1.25rem !important;
+    padding-top: 1.25rem !important; background-color: #FFFFFF !important;
 }
 
-/* ── EXPANDERS (document cards) ── */
-.streamlit-expanderHeader {
-    background: var(--mef-white) !important;
-    border: 1px solid var(--mef-border) !important;
-    border-radius: 3px !important;
-    font-family: var(--font) !important;
-    font-size: 13.5px !important;
-    font-weight: 600 !important;
-    color: var(--mef-blue-dark) !important;
-    padding: 12px 16px !important;
-    transition: background 0.15s;
+/* ══════════════════════════════════════════════════════════
+   EXPANDER / DOCUMENT CARDS
+   ══════════════════════════════════════════════════════════ */
+.streamlit-expanderHeader, details summary {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CED5E8 !important; border-radius: 3px !important;
+    font-family: var(--font) !important; font-size: 13.5px !important;
+    font-weight: 600 !important; color: #132B6B !important;
+    padding: 11px 16px !important;
 }
-.streamlit-expanderHeader:hover {
-    background: var(--mef-blue-light) !important;
+.streamlit-expanderHeader:hover, details summary:hover {
+    background-color: #E8EDF7 !important;
 }
-.streamlit-expanderContent {
-    border: 1px solid var(--mef-border) !important;
-    border-top: none !important;
-    border-radius: 0 0 3px 3px !important;
-    padding: 16px 20px !important;
-    background: var(--mef-white) !important;
+.streamlit-expanderContent, details > div {
+    border: 1px solid #CED5E8 !important; border-top: none !important;
+    border-radius: 0 0 3px 3px !important; padding: 16px 20px !important;
+    background-color: #FFFFFF !important; color: #17203A !important;
 }
 
-/* ── DOCUMENT FIELD LABELS ── */
+/* ══════════════════════════════════════════════════════════
+   DOCUMENT FIELDS
+   ══════════════════════════════════════════════════════════ */
 .doc-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--mef-text-muted);
-    margin-bottom: 2px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: #556080; margin-bottom: 2px;
+    font-family: var(--font);
 }
 .doc-value {
-    font-size: 13.5px;
-    color: var(--mef-text);
-    margin-bottom: 12px;
+    font-size: 13.5px; color: #17203A;
+    margin-bottom: 12px; font-family: var(--font);
 }
 .doc-cup {
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    background: var(--mef-blue-light);
-    color: var(--mef-blue-dark);
-    padding: 3px 8px;
-    border-radius: 2px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    font-family: 'Courier New', monospace; font-size: 12.5px;
+    background-color: #EDF2FF; color: #132B6B;
+    padding: 3px 8px; border-radius: 2px;
+    font-weight: 700; letter-spacing: .05em;
 }
 
-/* ── LINK BUTTON ── */
+/* ══════════════════════════════════════════════════════════
+   LINK BUTTON
+   ══════════════════════════════════════════════════════════ */
 .mef-link-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--mef-blue);
-    color: white !important;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-decoration: none !important;
-    padding: 7px 14px;
-    border-radius: 3px;
-    margin-top: 8px;
-    transition: background 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+    background-color: #1D3D8F; color: #FFFFFF !important;
+    font-size: 12px; font-weight: 600; letter-spacing: .04em;
+    text-decoration: none !important; padding: 7px 14px;
+    border-radius: 3px; margin-top: 8px; font-family: var(--font);
+    transition: background .15s;
 }
-.mef-link-btn:hover { background: var(--mef-blue-dark) !important; }
+.mef-link-btn:hover {
+    background-color: #132B6B !important; color: #FFFFFF !important;
+}
 
-/* ── TABLE ── */
+/* ══════════════════════════════════════════════════════════
+   CARD FOOTER
+   ══════════════════════════════════════════════════════════ */
+.card-footer {
+    font-size: 10.5px; color: #556080;
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px solid #CED5E8;
+    font-family: var(--font); background-color: #FFFFFF;
+}
+
+/* ══════════════════════════════════════════════════════════
+   TABLE
+   ══════════════════════════════════════════════════════════ */
 table {
-    font-size: 12.5px !important;
-    border-collapse: collapse !important;
-    width: 100% !important;
+    font-size: 12.5px !important; border-collapse: collapse !important;
+    width: 100% !important; font-family: var(--font) !important;
+    background-color: #FFFFFF !important;
 }
 th {
-    background: var(--mef-blue) !important;
-    color: white !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.06em !important;
-    text-transform: uppercase !important;
-    padding: 8px 12px !important;
-    border: none !important;
+    background-color: #1D3D8F !important; color: #FFFFFF !important;
+    font-size: 10.5px !important; font-weight: 700 !important;
+    letter-spacing: .07em !important; text-transform: uppercase !important;
+    padding: 8px 12px !important; border: none !important;
 }
 td {
-    padding: 7px 12px !important;
-    border-bottom: 1px solid var(--mef-border) !important;
-    vertical-align: top;
+    padding: 7px 12px !important; border-bottom: 1px solid #CED5E8 !important;
+    vertical-align: top !important; color: #17203A !important;
+    background-color: #FFFFFF !important;
 }
-tr:nth-child(even) td { background: var(--mef-off-white) !important; }
+tr:nth-child(even) td { background-color: #F5F6F8 !important; }
 
-/* ── SIDEBAR ── */
+/* ══════════════════════════════════════════════════════════
+   SIDEBAR  (intentionally dark — institutional blue band)
+   ══════════════════════════════════════════════════════════ */
 [data-testid="stSidebar"] {
-    background: var(--mef-blue-dark) !important;
-    border-right: 3px solid var(--mef-gold) !important;
+    background-color: #132B6B !important;
+    border-right: 3px solid #C49B1D !important;
 }
 [data-testid="stSidebar"] * {
-    color: rgba(255,255,255,0.85) !important;
     font-family: var(--font) !important;
+    color: rgba(255,255,255,.82) !important;
 }
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3 {
-    color: white !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.08em !important;
-    border-bottom: 1px solid rgba(255,255,255,0.15) !important;
-    padding-bottom: 6px !important;
-    margin-top: 16px !important;
-}
-[data-testid="stSidebar"] .stMetric {
-    background: rgba(255,255,255,0.07) !important;
-    border-radius: 3px !important;
-    padding: 8px 10px !important;
-    margin-bottom: 6px !important;
+    color: #FFFFFF !important; font-size: 11px !important;
+    font-weight: 700 !important; text-transform: uppercase !important;
+    letter-spacing: .08em !important;
+    border-bottom: 1px solid rgba(255,255,255,.15) !important;
+    padding-bottom: 5px !important; margin-top: 14px !important;
 }
 [data-testid="stSidebar"] [data-testid="stMetricValue"] {
-    font-size: 20px !important;
-    font-weight: 700 !important;
-    color: white !important;
+    font-size: 20px !important; font-weight: 700 !important;
+    color: #FFFFFF !important;
 }
 [data-testid="stSidebar"] [data-testid="stMetricLabel"] {
-    font-size: 10px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.07em !important;
-    color: rgba(255,255,255,0.55) !important;
+    font-size: 9.5px !important; text-transform: uppercase !important;
+    letter-spacing: .07em !important; color: rgba(255,255,255,.50) !important;
 }
-[data-testid="stSidebar"] .stMarkdown caption,
-[data-testid="stSidebar"] small {
-    color: rgba(255,255,255,0.45) !important;
-    font-size: 10.5px !important;
-}
-[data-testid="stSidebar"] hr {
-    border-color: rgba(255,255,255,0.12) !important;
-}
-
-/* ── SIDEBAR GOLD DETAIL TAGS ── */
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.12) !important; }
 .sb-type-badge {
-    display: inline-block;
-    background: var(--mef-gold);
-    color: white;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 2px 6px;
-    border-radius: 2px;
-    margin-right: 4px;
+    display: inline-block; background-color: #C49B1D; color: #FFFFFF;
+    font-size: 9px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; padding: 2px 5px; border-radius: 2px; margin-right: 4px;
 }
 
-/* ── FOOTER ── */
+/* ══════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════ */
 .mef-footer {
-    border-top: 1px solid var(--mef-border);
-    margin-top: 3rem;
-    padding-top: 1rem;
-    font-size: 11px;
-    color: var(--mef-text-muted);
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-.mef-footer a { color: var(--mef-blue); text-decoration: none; }
-
-/* ── WARNINGS ── */
-.stAlert {
-    border-radius: 3px !important;
-    font-size: 13px !important;
-    font-family: var(--font) !important;
+    border-top: 1px solid #CED5E8; margin-top: 3rem; padding-top: 1rem;
+    font-size: 11px; color: #556080; font-family: var(--font);
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 4px; background-color: #FFFFFF;
 }
 
-/* ── Hide Streamlit default elements ── */
+/* ── Hide Streamlit chrome ── */
 #MainMenu { visibility: hidden; }
 footer    { visibility: hidden; }
 header    { visibility: hidden; }
@@ -507,26 +499,22 @@ st.markdown(MEF_CSS, unsafe_allow_html=True)
 def encode_path(path):
     return quote(path, safe="")
 
-
 def onedrive_link_at(filename):
     file_path = AT_ONEDRIVE_PATH + "/" + filename
-    parent_path = AT_ONEDRIVE_PATH
     return (
         f"{SHAREPOINT_BASE}"
         f"?id={encode_path(file_path)}"
-        f"&parent={encode_path(parent_path)}"
+        f"&parent={encode_path(AT_ONEDRIVE_PATH)}"
     )
-
 
 def onedrive_link_rn(cartella, filename):
     if not cartella or not filename:
         return None
     file_path = RN_ONEDRIVE_PATH + "/" + cartella + "/" + filename
-    parent_path = RN_ONEDRIVE_PATH + "/" + cartella
     return (
         f"{SHAREPOINT_BASE}"
         f"?id={encode_path(file_path)}"
-        f"&parent={encode_path(parent_path)}"
+        f"&parent={encode_path(RN_ONEDRIVE_PATH + '/' + cartella)}"
     )
 
 
@@ -543,16 +531,13 @@ def load_at_data():
     df["_fonte"] = "AT"
     return df
 
-
 @st.cache_data
 def load_rn_data():
     frames = []
     for csv_file in RN_CSV_FILES:
         if os.path.exists(csv_file):
             try:
-                df = pd.read_csv(
-                    csv_file, sep=";", encoding="utf-8-sig", dtype=str
-                )
+                df = pd.read_csv(csv_file, sep=";", encoding="utf-8-sig", dtype=str)
                 df = df.fillna("")
                 df["_csv_origine"] = os.path.basename(csv_file)
                 frames.append(df)
@@ -579,21 +564,27 @@ rn_disponibile = not df_rn.empty
 #  INSTITUTIONAL HEADER
 # ═══════════════════════════════════════════════════════════════════════
 
-st.markdown("""
+if RGS_LOGO_B64:
+    logo_html = (
+        f'<img class="mef-logo-img" '
+        f'src="data:image/png;base64,{RGS_LOGO_B64}" '
+        f'alt="MEF — Ragioneria Generale dello Stato" />'
+    )
+else:
+    logo_html = '<div class="mef-logo-fallback">MEF</div>'
+
+st.markdown(f"""
 <div class="mef-header">
   <div class="mef-header-inner">
-    <div class="mef-logo-circle">
-      MEF
-      <div class="mef-logo-arc"></div>
-    </div>
-    <div class="mef-header-text">
-      <div class="mef-header-title">Ministero dell'Economia e delle Finanze</div>
+    {logo_html}
+    <div>
+      <div class="mef-header-ministry">Ministero dell'Economia e delle Finanze</div>
       <div class="mef-header-dept">Ragioneria Generale dello Stato</div>
       <div class="mef-header-sub">Sistema di ricerca documentale</div>
     </div>
     <div class="mef-header-right">
       <div class="mef-app-name">CUPDF</div>
-      <div class="mef-app-desc">CUP Document Finder</div>
+      <div class="mef-app-tagline">CUP Document Finder</div>
     </div>
   </div>
 </div>
@@ -607,9 +598,10 @@ st.markdown("""
 st.markdown("""
 <div class="mef-page-title">Ricerca per CUP</div>
 <div class="mef-page-subtitle">
-  Consultazione integrata di 
-  <span class="mef-tag tag-at">AT</span> Amministrazione Trasparente &nbsp;e&nbsp;
-  <span class="mef-tag tag-rn">RN</span> Ricerca Normativa — MIT
+  Consultazione integrata di&nbsp;
+  <span class="mef-tag tag-at">AT</span>&nbsp;Amministrazione Trasparente
+  &nbsp;e&nbsp;
+  <span class="mef-tag tag-rn">RN</span>&nbsp;Ricerca Normativa — MIT
 </div>
 """, unsafe_allow_html=True)
 
@@ -618,31 +610,62 @@ st.markdown("""
 #  STATUS INDICATORS
 # ═══════════════════════════════════════════════════════════════════════
 
-at_label  = (f"Amministrazione Trasparente — {len(df_at):,} record &nbsp;"
-             f"<span class='mef-status-tag'>AT</span>") if at_disponibile \
-            else "Amministrazione Trasparente — dati non trovati &nbsp;<span class='mef-status-tag'>AT</span>"
-
-rn_label  = (f"Ricerca Normativa — {len(df_rn):,} record ({df_rn['_csv_origine'].nunique()} file) &nbsp;"
-             f"<span class='mef-status-tag'>RN</span>") if rn_disponibile \
-            else "Ricerca Normativa — dati non trovati &nbsp;<span class='mef-status-tag'>RN</span>"
-
-at_class  = "ok"    if at_disponibile else "error"
-rn_class  = "ok"    if rn_disponibile else "error"
+at_class = "ok" if at_disponibile else "error"
+rn_class = "ok" if rn_disponibile else "error"
+at_text = (
+    f"Amministrazione Trasparente — {len(df_at):,} record"
+    if at_disponibile else "Amministrazione Trasparente — dati non trovati"
+)
+rn_text = (
+    f"Ricerca Normativa — {len(df_rn):,} record ({df_rn['_csv_origine'].nunique()} file)"
+    if rn_disponibile else "Ricerca Normativa — dati non trovati"
+)
 
 st.markdown(f"""
 <div class="mef-status-row">
   <div class="mef-status-card {at_class}">
     <div class="mef-status-dot"></div>
-    <span>{at_label}</span>
+    <span>{at_text}</span>
+    <span class="mef-status-tag">AT</span>
   </div>
   <div class="mef-status-card {rn_class}">
     <div class="mef-status-dot"></div>
-    <span>{rn_label}</span>
+    <span>{rn_text}</span>
+    <span class="mef-status-tag">RN</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown('<hr class="mef-rule">', unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  HELPERS
+# ═══════════════════════════════════════════════════════════════════════
+
+def field(label: str, value: str, mono: bool = False) -> str:
+    if not value or str(value).strip() in ("", "nan", "None"):
+        return ""
+    val_class = "doc-cup" if mono else ""
+    return (
+        f'<div class="doc-label">{label}</div>'
+        f'<div class="doc-value {val_class}">{value}</div>'
+    )
+
+def open_link_html(url: str) -> str:
+    return (
+        f'<a class="mef-link-btn" href="{url}" target="_blank">'
+        f'&#8599;&nbsp; Apri documento su OneDrive</a>'
+    )
+
+def card_footer(tag: str, tag_class: str, source_name: str, extra: str = "") -> str:
+    return (
+        f'<div class="card-footer">'
+        f'<span class="mef-tag {tag_class}" style="font-size:9px">{tag}</span>'
+        f'&nbsp; Fonte: {source_name}'
+        + (f' &nbsp;|&nbsp; {extra}' if extra else "")
+        + "</div>"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -653,28 +676,6 @@ query = st.text_input(
     "Codice CUP (o parte di esso)",
     placeholder="es. J31B20000050001",
 )
-
-
-# ═══════════════════════════════════════════════════════════════════════
-#  HELPER: render a field row with institutional label style
-# ═══════════════════════════════════════════════════════════════════════
-
-def field(label: str, value: str, mono: bool = False) -> str:
-    """Return HTML for a labelled document field."""
-    if not value or str(value).strip() in ("", "nan", "None"):
-        return ""
-    val_class = "doc-cup" if mono else ""
-    return (
-        f'<div class="doc-label">{label}</div>'
-        f'<div class="doc-value {val_class}">{value}</div>'
-    )
-
-
-def open_link_html(url: str) -> str:
-    return (
-        f'<a class="mef-link-btn" href="{url}" target="_blank">'
-        f'&#8599;&nbsp; Apri documento su OneDrive</a>'
-    )
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -699,14 +700,13 @@ if query:
     else:
         st.markdown(f"""
         <div class="mef-result-banner">
-            <span>Risultati per &nbsp;<strong>{query_clean}</strong></span>
-            <span><strong>{tot}</strong> documento/i trovato/i</span>
-            <span><span class="mef-tag tag-at">AT</span>&nbsp; {len(results_at)} da Amm. Trasparente</span>
-            <span><span class="mef-tag tag-rn">RN</span>&nbsp; {len(results_rn)} da Ricerca Normativa</span>
+          <span>Risultati per &nbsp;<strong>{query_clean}</strong></span>
+          <span><strong>{tot}</strong> documento/i trovato/i</span>
+          <span><span class="mef-tag tag-at">AT</span>&nbsp; {len(results_at)} da Amm. Trasparente</span>
+          <span><span class="mef-tag tag-rn">RN</span>&nbsp; {len(results_rn)} da Ricerca Normativa</span>
         </div>
         """, unsafe_allow_html=True)
 
-        # --- CUP unici combinati ---
         all_cups = []
         if not results_at.empty:
             all_cups.extend(results_at["cup"].unique().tolist())
@@ -724,7 +724,6 @@ if query:
             if not results_rn.empty:
                 results_rn = results_rn[results_rn["CUP"] == selected_cup]
 
-        # ─── TABS ─────────────────────────────────────────────────
         tab_at, tab_rn, tab_all = st.tabs([
             f"Amm. Trasparente  ({len(results_at)})",
             f"Ricerca Normativa  ({len(results_rn)})",
@@ -736,23 +735,20 @@ if query:
             if results_at.empty:
                 st.info("Nessun risultato da Amministrazione Trasparente.")
             else:
-                for i, row in results_at.iterrows():
-                    with st.expander(
-                        f"[AT]  {row['file']}",
-                        expanded=True,
-                    ):
+                for _, row in results_at.iterrows():
+                    with st.expander(f"[AT]  {row['file']}", expanded=True):
                         col1, col2 = st.columns(2)
                         with col1:
                             st.markdown(
                                 field("CUP", row["cup"], mono=True)
                                 + field("Capitolo", str(row.get("cap", "")))
                                 + field("Piano Gestionale", str(row.get("pg", "")))
-                                + field("Stato — Capitolo — Piano", str(row.get("stacappg", ""))),
+                                + field("Stato — Cap. — Piano", str(row.get("stacappg", ""))),
                                 unsafe_allow_html=True,
                             )
                         with col2:
                             st.markdown(
-                                field("N. Decreto",  str(row.get("n_decreto",  "")))
+                                field("N. Decreto",   str(row.get("n_decreto",   "")))
                                 + field("Data Decreto", str(row.get("data_decreto", "")))
                                 + field("Decreto",      str(row.get("decreto",      ""))),
                                 unsafe_allow_html=True,
@@ -760,10 +756,7 @@ if query:
                         link = onedrive_link_at(row["file"])
                         st.markdown(open_link_html(link), unsafe_allow_html=True)
                         st.markdown(
-                            '<div style="font-size:10.5px;color:var(--mef-text-muted);'
-                            'margin-top:10px;padding-top:8px;border-top:1px solid var(--mef-border)">'
-                            '<span class="mef-tag tag-at" style="font-size:9px">AT</span>'
-                            '&nbsp; Fonte: Amministrazione Trasparente</div>',
+                            card_footer("AT", "tag-at", "Amministrazione Trasparente"),
                             unsafe_allow_html=True,
                         )
 
@@ -772,21 +765,18 @@ if query:
             if results_rn.empty:
                 st.info("Nessun risultato da Ricerca Normativa.")
             else:
-                for i, row in results_rn.iterrows():
+                for _, row in results_rn.iterrows():
                     doc_name  = row.get("Documento",  "Documento sconosciuto")
                     tipologia = row.get("Tipologia",  "")
                     cartella  = row.get("Cartella",   "")
-                    with st.expander(
-                        f"[RN]  {doc_name}",
-                        expanded=True,
-                    ):
+                    with st.expander(f"[RN]  {doc_name}", expanded=True):
                         col1, col2 = st.columns(2)
                         with col1:
                             st.markdown(
                                 field("CUP", row["CUP"], mono=True)
-                                + field("Capitolo di Spesa",  str(row.get("Capitolo_di_Spesa", "")))
-                                + field("Piano Gestionale",   str(row.get("Piano_Gestionale",  "")))
-                                + field("Importo (EUR)",      str(row.get("Importo_EUR",       ""))),
+                                + field("Capitolo di Spesa", str(row.get("Capitolo_di_Spesa", "")))
+                                + field("Piano Gestionale",  str(row.get("Piano_Gestionale",  "")))
+                                + field("Importo (EUR)",     str(row.get("Importo_EUR",        ""))),
                                 unsafe_allow_html=True,
                             )
                         with col2:
@@ -801,27 +791,25 @@ if query:
                         if link:
                             st.markdown(open_link_html(link), unsafe_allow_html=True)
                         src = row.get("_csv_origine", "")
+                        extra = f"Cartella: {cartella}" if cartella else ""
                         st.markdown(
-                            f'<div style="font-size:10.5px;color:var(--mef-text-muted);'
-                            f'margin-top:10px;padding-top:8px;border-top:1px solid var(--mef-border)">'
-                            f'<span class="mef-tag tag-rn" style="font-size:9px">RN</span>'
-                            f'&nbsp; Fonte: Ricerca Normativa ({src})'
-                            + (f' &nbsp;|&nbsp; Cartella: {cartella}' if cartella else "")
-                            + "</div>",
+                            card_footer("RN", "tag-rn", f"Ricerca Normativa ({src})", extra),
                             unsafe_allow_html=True,
                         )
 
-        # ═══ TAB TUTTI ════════════════════════════════════════════
+        # ═══ TAB RIEPILOGO ════════════════════════════════════════
         with tab_all:
             st.markdown(
-                "<p style='font-size:13px;color:var(--mef-text-muted);margin-bottom:1rem'>"
+                "<p style='font-size:13px;color:#556080;margin-bottom:1rem;"
+                "font-family:Segoe UI,sans-serif'>"
                 "Riepilogo combinato di tutti i risultati trovati.</p>",
                 unsafe_allow_html=True,
             )
             if not results_at.empty:
                 st.markdown(
                     "<div style='font-size:11px;font-weight:700;text-transform:uppercase;"
-                    "letter-spacing:.07em;color:var(--mef-blue);margin-bottom:8px'>"
+                    "letter-spacing:.07em;color:#1D3D8F;margin-bottom:8px;"
+                    "font-family:Segoe UI,sans-serif'>"
                     "<span class='mef-tag tag-at' style='font-size:9px'>AT</span>"
                     "&nbsp; Amministrazione Trasparente</div>",
                     unsafe_allow_html=True,
@@ -829,16 +817,15 @@ if query:
                 display_at = results_at[
                     ["cup", "cap", "pg", "n_decreto", "data_decreto", "file"]
                 ].copy()
-                display_at.columns = [
-                    "CUP", "Capitolo", "Piano Gest.", "N. Decreto", "Data Decreto", "Documento"
-                ]
+                display_at.columns = ["CUP", "Capitolo", "Piano Gest.", "N. Decreto", "Data Decreto", "Documento"]
                 display_at.insert(0, "Fonte", "AT")
                 st.table(display_at.reset_index(drop=True))
 
             if not results_rn.empty:
                 st.markdown(
                     "<div style='font-size:11px;font-weight:700;text-transform:uppercase;"
-                    "letter-spacing:.07em;color:var(--mef-gold);margin-bottom:8px;margin-top:16px'>"
+                    "letter-spacing:.07em;color:#C49B1D;margin-bottom:8px;margin-top:16px;"
+                    "font-family:Segoe UI,sans-serif'>"
                     "<span class='mef-tag tag-rn' style='font-size:9px'>RN</span>"
                     "&nbsp; Ricerca Normativa</div>",
                     unsafe_allow_html=True,
@@ -858,9 +845,11 @@ if query:
 st.markdown(
     f'<div class="mef-footer">'
     f'  <span>Ministero dell\'Economia e delle Finanze — Ragioneria Generale dello Stato</span>'
-    f'  <span>Avviato: {start_time_str} &nbsp;|&nbsp; '
-    f'    <span class="mef-tag tag-at" style="font-size:9px">AT</span> Amm. Trasparente &nbsp;&nbsp;'
-    f'    <span class="mef-tag tag-rn" style="font-size:9px">RN</span> Ricerca Normativa MIT'
+    f'  <span>Avviato: {start_time_str} &nbsp;|&nbsp;'
+    f'    <span class="mef-tag tag-at" style="font-size:9px">AT</span>'
+    f'    &nbsp;Amm. Trasparente&nbsp;&nbsp;'
+    f'    <span class="mef-tag tag-rn" style="font-size:9px">RN</span>'
+    f'    &nbsp;Ricerca Normativa MIT'
     f'  </span>'
     f'</div>',
     unsafe_allow_html=True,
@@ -873,20 +862,21 @@ st.markdown(
 
 with st.sidebar:
     st.markdown(
-        "<div style='padding:16px 0 8px 0;font-size:15px;font-weight:700;"
-        "color:white;letter-spacing:.01em;border-bottom:1px solid rgba(255,255,255,.15);"
-        "margin-bottom:4px'>"
-        "MEF &nbsp;<span style='color:var(--mef-gold)'>·</span>&nbsp; RGS"
-        "<br><span style='font-size:10px;font-weight:300;opacity:.6;letter-spacing:.06em;text-transform:uppercase'>"
+        "<div style='padding:14px 0 8px 0;font-size:14px;font-weight:700;"
+        "color:#FFFFFF;font-family:Segoe UI,sans-serif;"
+        "border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:4px'>"
+        "MEF &nbsp;<span style='color:#C49B1D'>·</span>&nbsp; RGS"
+        "<br><span style='font-size:9.5px;font-weight:300;opacity:.55;"
+        "letter-spacing:.07em;text-transform:uppercase'>"
         "Statistiche Database</span></div>",
         unsafe_allow_html=True,
     )
 
     st.subheader("Amm. Trasparente")
     if at_disponibile:
-        st.metric("Record totali",  f"{len(df_at):,}")
-        st.metric("CUP unici",      f"{df_at['cup'].nunique():,}")
-        st.metric("Documenti",      f"{df_at['file'].nunique():,}")
+        st.metric("Record totali", f"{len(df_at):,}")
+        st.metric("CUP unici",     f"{df_at['cup'].nunique():,}")
+        st.metric("Documenti",     f"{df_at['file'].nunique():,}")
     else:
         st.caption("Non disponibile")
 
@@ -897,14 +887,11 @@ with st.sidebar:
         st.metric("CUP unici",      f"{df_rn['CUP'].nunique():,}")
         for csv_name in df_rn["_csv_origine"].unique():
             subset = df_rn[df_rn["_csv_origine"] == csv_name]
-            tipo = (
-                csv_name
-                .replace("risultati_puliti_", "")
-                .replace(".csv", "")
-            )
+            tipo = csv_name.replace("risultati_puliti_", "").replace(".csv", "")
             st.markdown(
-                f"<div style='font-size:11px;opacity:.7;padding:2px 0'>"
-                f"<span class='sb-type-badge'>{tipo}</span> "
+                f"<div style='font-size:11px;opacity:.72;padding:2px 0;"
+                f"font-family:Segoe UI,sans-serif'>"
+                f"<span class='sb-type-badge'>{tipo}</span>"
                 f"{len(subset):,} rec &nbsp;·&nbsp; {subset['CUP'].nunique():,} CUP"
                 f"</div>",
                 unsafe_allow_html=True,
@@ -926,9 +913,10 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown(
-        f"<div style='font-size:10px;opacity:.45;padding-bottom:8px'>"
+        f"<div style='font-size:10px;opacity:.40;padding-bottom:8px;"
+        f"font-family:Segoe UI,sans-serif'>"
         f"Avviato: {start_time_str}<br>"
-        f"⚠️ Accesso PDF richiede OneDrive condiviso."
+        f"&#9888; Accesso PDF richiede OneDrive condiviso."
         f"</div>",
         unsafe_allow_html=True,
     )
