@@ -405,14 +405,24 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
     text-transform: uppercase; padding: 2px 5px; border-radius: 2px; margin-right: 4px;
 }
 
-/* ---- FIX: SIDEBAR TOGGLE ARROWS ---- */
-[data-testid="stSidebarCollapseButton"] button {
-    background-color: rgba(255,255,255,.10) !important;
-    border-radius: 4px !important;
+/* ---- SIDEBAR ALWAYS VISIBLE ---- */
+[data-testid="stSidebar"] {
+    margin-left: 0 !important;
+    transform: none !important;
+    width: 300px !important;
+    min-width: 300px !important;
 }
-[data-testid="stSidebarCollapseButton"] button svg {
-    color: #FFFFFF !important;
-    fill: #FFFFFF !important;
+[data-testid="stSidebar"][aria-expanded="false"] {
+    margin-left: 0 !important;
+    transform: none !important;
+    width: 300px !important;
+    min-width: 300px !important;
+}
+/* Hide collapse/expand buttons */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"] {
+    display: none !important;
 }
 
 /* ---- FIX: STREAMLIT NATIVE HEADER BAR (white stripe) ---- */
@@ -447,80 +457,6 @@ footer                                 { display: none !important; }
 """
 
 st.markdown(MEF_CSS, unsafe_allow_html=True)
-
-# Pulsante custom per riaprire la sidebar (usa components.html per eseguire JS)
-import streamlit.components.v1 as components
-components.html("""
-<style>
-#mef-sidebar-toggle {
-    position: fixed;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 999999;
-    background-color: #132B6B;
-    border: none;
-    border-right: 3px solid #C49B1D;
-    border-radius: 0 6px 6px 0;
-    color: #FFFFFF;
-    padding: 12px 8px;
-    cursor: pointer;
-    font-size: 18px;
-    line-height: 1;
-    display: none;
-}
-#mef-sidebar-toggle:hover { background-color: #1D3D8F; }
-</style>
-<script>
-(function() {
-    var doc = window.parent.document;
-
-    // Create toggle button in the parent document (main Streamlit frame)
-    var existing = doc.getElementById('mef-sidebar-toggle');
-    if (!existing) {
-        var btn = doc.createElement('button');
-        btn.id = 'mef-sidebar-toggle';
-        btn.innerHTML = '&#9776;';
-        btn.style.cssText = 'position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:999999;background:#132B6B;border:none;border-right:3px solid #C49B1D;border-radius:0 6px 6px 0;color:#FFF;padding:12px 8px;cursor:pointer;font-size:18px;display:none;';
-        btn.addEventListener('click', function() {
-            // Try to find and click any Streamlit sidebar open button
-            var targets = [
-                '[data-testid="collapsedControl"] button',
-                '[data-testid="stSidebarCollapsedControl"] button',
-                'button[aria-label="Open sidebar"]',
-                'button[aria-label="Expand sidebar"]'
-            ];
-            for (var i = 0; i < targets.length; i++) {
-                var el = doc.querySelector(targets[i]);
-                if (el) { el.click(); return; }
-            }
-            // Fallback: directly manipulate sidebar
-            var sb = doc.querySelector('[data-testid="stSidebar"]');
-            if (sb) {
-                sb.style.marginLeft = '0px';
-                sb.style.transform = 'none';
-                sb.setAttribute('aria-expanded', 'true');
-            }
-        });
-        doc.body.appendChild(btn);
-    }
-
-    // Poll sidebar state
-    setInterval(function() {
-        var toggle = doc.getElementById('mef-sidebar-toggle');
-        if (!toggle) return;
-        var sb = doc.querySelector('[data-testid="stSidebar"]');
-        if (!sb) { toggle.style.display = 'block'; return; }
-        var expanded = sb.getAttribute('aria-expanded');
-        var isCollapsed = expanded === 'false'
-            || sb.offsetWidth < 10
-            || (window.getComputedStyle(sb).marginLeft &&
-                parseInt(window.getComputedStyle(sb).marginLeft) < -50);
-        toggle.style.display = isCollapsed ? 'block' : 'none';
-    }, 400);
-})();
-</script>
-""", height=0)
 
 
 # ===================================================================
