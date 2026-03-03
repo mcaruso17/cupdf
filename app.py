@@ -415,29 +415,6 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
     fill: #FFFFFF !important;
 }
 
-/* ---- CUSTOM SIDEBAR TOGGLE ---- */
-#mef-sidebar-toggle {
-    position: fixed;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 999999;
-    background-color: #132B6B;
-    border: none;
-    border-right: 3px solid #C49B1D;
-    border-radius: 0 6px 6px 0;
-    color: #FFFFFF;
-    padding: 12px 8px;
-    cursor: pointer;
-    font-size: 18px;
-    line-height: 1;
-    display: none;
-    transition: background-color .15s;
-}
-#mef-sidebar-toggle:hover {
-    background-color: #1D3D8F;
-}
-
 /* ---- FIX: STREAMLIT NATIVE HEADER BAR (white stripe) ---- */
 header[data-testid="stHeader"] {
     background-color: transparent !important;
@@ -471,38 +448,79 @@ footer                                 { display: none !important; }
 
 st.markdown(MEF_CSS, unsafe_allow_html=True)
 
-# Pulsante custom per riaprire la sidebar
-st.markdown("""
-<button id="mef-sidebar-toggle" onclick="
-    var btn = document.querySelector('[data-testid=\\'collapsedControl\\'] button')
-             || document.querySelector('[data-testid=\\'stSidebar\\'] button[kind=\\'header\\']');
-    if (btn) { btn.click(); }
-    else {
-        var sidebar = document.querySelector('[data-testid=\\'stSidebar\\']');
-        if (sidebar) {
-            sidebar.style.display = '';
-            sidebar.style.width = '';
-            sidebar.style.transform = '';
-            sidebar.setAttribute('aria-expanded', 'true');
-        }
-    }
-">&#9776;</button>
+# Pulsante custom per riaprire la sidebar (usa components.html per eseguire JS)
+import streamlit.components.v1 as components
+components.html("""
+<style>
+#mef-sidebar-toggle {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 999999;
+    background-color: #132B6B;
+    border: none;
+    border-right: 3px solid #C49B1D;
+    border-radius: 0 6px 6px 0;
+    color: #FFFFFF;
+    padding: 12px 8px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: none;
+}
+#mef-sidebar-toggle:hover { background-color: #1D3D8F; }
+</style>
 <script>
 (function() {
-    function checkSidebar() {
-        var sidebar = document.querySelector('[data-testid="stSidebar"]');
-        var toggle = document.getElementById('mef-sidebar-toggle');
-        if (!toggle) return;
-        if (!sidebar) { toggle.style.display = 'block'; return; }
-        var collapsed = sidebar.getAttribute('aria-expanded') === 'false'
-                     || sidebar.offsetWidth < 10
-                     || window.getComputedStyle(sidebar).transform.includes('-');
-        toggle.style.display = collapsed ? 'block' : 'none';
+    var doc = window.parent.document;
+
+    // Create toggle button in the parent document (main Streamlit frame)
+    var existing = doc.getElementById('mef-sidebar-toggle');
+    if (!existing) {
+        var btn = doc.createElement('button');
+        btn.id = 'mef-sidebar-toggle';
+        btn.innerHTML = '&#9776;';
+        btn.style.cssText = 'position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:999999;background:#132B6B;border:none;border-right:3px solid #C49B1D;border-radius:0 6px 6px 0;color:#FFF;padding:12px 8px;cursor:pointer;font-size:18px;display:none;';
+        btn.addEventListener('click', function() {
+            // Try to find and click any Streamlit sidebar open button
+            var targets = [
+                '[data-testid="collapsedControl"] button',
+                '[data-testid="stSidebarCollapsedControl"] button',
+                'button[aria-label="Open sidebar"]',
+                'button[aria-label="Expand sidebar"]'
+            ];
+            for (var i = 0; i < targets.length; i++) {
+                var el = doc.querySelector(targets[i]);
+                if (el) { el.click(); return; }
+            }
+            // Fallback: directly manipulate sidebar
+            var sb = doc.querySelector('[data-testid="stSidebar"]');
+            if (sb) {
+                sb.style.marginLeft = '0px';
+                sb.style.transform = 'none';
+                sb.setAttribute('aria-expanded', 'true');
+            }
+        });
+        doc.body.appendChild(btn);
     }
-    setInterval(checkSidebar, 300);
+
+    // Poll sidebar state
+    setInterval(function() {
+        var toggle = doc.getElementById('mef-sidebar-toggle');
+        if (!toggle) return;
+        var sb = doc.querySelector('[data-testid="stSidebar"]');
+        if (!sb) { toggle.style.display = 'block'; return; }
+        var expanded = sb.getAttribute('aria-expanded');
+        var isCollapsed = expanded === 'false'
+            || sb.offsetWidth < 10
+            || (window.getComputedStyle(sb).marginLeft &&
+                parseInt(window.getComputedStyle(sb).marginLeft) < -50);
+        toggle.style.display = isCollapsed ? 'block' : 'none';
+    }, 400);
 })();
 </script>
-""", unsafe_allow_html=True)
+""", height=0)
 
 
 # ===================================================================
