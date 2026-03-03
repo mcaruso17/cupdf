@@ -415,39 +415,41 @@ tr:nth-child(even) td { background-color: #F5F6F8 !important; }
     fill: #FFFFFF !important;
 }
 
-/* ---- FIX: SIDEBAR REOPEN BUTTON ---- */
-[data-testid="collapsedControl"] {
-    background-color: #132B6B !important;
-    border-right: 3px solid #C49B1D !important;
-    border-radius: 0 6px 6px 0 !important;
-    z-index: 999999 !important;
-    position: fixed !important;
-    left: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+/* ---- CUSTOM SIDEBAR TOGGLE ---- */
+#mef-sidebar-toggle {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 999999;
+    background-color: #132B6B;
+    border: none;
+    border-right: 3px solid #C49B1D;
+    border-radius: 0 6px 6px 0;
+    color: #FFFFFF;
+    padding: 12px 8px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: none;
+    transition: background-color .15s;
 }
-[data-testid="collapsedControl"] button {
-    color: #FFFFFF !important;
-    background-color: transparent !important;
-}
-[data-testid="collapsedControl"] button svg,
-[data-testid="collapsedControl"] button svg path {
-    color: #FFFFFF !important;
-    fill: #FFFFFF !important;
-    stroke: #FFFFFF !important;
-}
-[data-testid="collapsedControl"] span {
-    color: transparent !important;
-    font-size: 0 !important;
+#mef-sidebar-toggle:hover {
+    background-color: #1D3D8F;
 }
 
 /* ---- FIX: STREAMLIT NATIVE HEADER BAR (white stripe) ---- */
 header[data-testid="stHeader"] {
     background-color: transparent !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    pointer-events: none !important;
+}
+header[data-testid="stHeader"] * {
+    pointer-events: auto !important;
+}
+header[data-testid="stHeader"] [data-testid="stToolbar"] {
+    display: none !important;
 }
 
 /* ---- HIDE STREAMLIT CHROME ---- */
@@ -468,6 +470,39 @@ footer                                 { display: none !important; }
 """
 
 st.markdown(MEF_CSS, unsafe_allow_html=True)
+
+# Pulsante custom per riaprire la sidebar
+st.markdown("""
+<button id="mef-sidebar-toggle" onclick="
+    var btn = document.querySelector('[data-testid=\\'collapsedControl\\'] button')
+             || document.querySelector('[data-testid=\\'stSidebar\\'] button[kind=\\'header\\']');
+    if (btn) { btn.click(); }
+    else {
+        var sidebar = document.querySelector('[data-testid=\\'stSidebar\\']');
+        if (sidebar) {
+            sidebar.style.display = '';
+            sidebar.style.width = '';
+            sidebar.style.transform = '';
+            sidebar.setAttribute('aria-expanded', 'true');
+        }
+    }
+">&#9776;</button>
+<script>
+(function() {
+    function checkSidebar() {
+        var sidebar = document.querySelector('[data-testid="stSidebar"]');
+        var toggle = document.getElementById('mef-sidebar-toggle');
+        if (!toggle) return;
+        if (!sidebar) { toggle.style.display = 'block'; return; }
+        var collapsed = sidebar.getAttribute('aria-expanded') === 'false'
+                     || sidebar.offsetWidth < 10
+                     || window.getComputedStyle(sidebar).transform.includes('-');
+        toggle.style.display = collapsed ? 'block' : 'none';
+    }
+    setInterval(checkSidebar, 300);
+})();
+</script>
+""", unsafe_allow_html=True)
 
 
 # ===================================================================
