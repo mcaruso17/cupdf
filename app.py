@@ -592,7 +592,7 @@ st.markdown("""
   <span class="mef-tag tag-at">AT</span>&nbsp;Amministrazione Trasparente
   &nbsp;e&nbsp;
   <span class="mef-tag tag-rn">RN</span>&nbsp;Ricerca Normativa — MIT
-  &nbsp;&#8212;&nbsp; Ricerca per CUP, Capitolo di Spesa o Piano di Gestione
+  &nbsp;&#8212;&nbsp; Ricerca per CUP o Capitolo di Spesa (con filtro opzionale per Piano di Gestione)
 </div>
 """, unsafe_allow_html=True)
 
@@ -721,9 +721,8 @@ def group_rn(df):
 # ===================================================================
 
 SEARCH_MODES = {
-    "CUP":                  "Codice CUP (o parte di esso)",
-    "Capitolo di Spesa":    "Capitolo di Spesa (es. 7000)",
-    "Piano di Gestione":    "Piano di Gestione (es. 1)",
+    "CUP":               "Codice CUP (o parte di esso)",
+    "Capitolo di Spesa": "Capitolo di Spesa (es. 7000)",
 }
 
 col_mode, col_query = st.columns([1, 3])
@@ -733,16 +732,23 @@ with col_mode:
         options=list(SEARCH_MODES.keys()),
     )
 with col_query:
-    placeholder = SEARCH_MODES[search_mode]
     if search_mode == "CUP":
-        placeholder = "es. J31B20000050001"
-    elif search_mode == "Capitolo di Spesa":
-        placeholder = "es. 7000"
-    elif search_mode == "Piano di Gestione":
-        placeholder = "es. 1"
-    query = st.text_input(
-        SEARCH_MODES[search_mode],
-        placeholder=placeholder,
+        query = st.text_input(
+            "Codice CUP (o parte di esso)",
+            placeholder="es. J31B20000050001",
+        )
+    else:
+        query = st.text_input(
+            "Capitolo di Spesa",
+            placeholder="es. 7000",
+        )
+
+# Campo opzionale PG — visibile solo quando si cerca per Capitolo
+query_pg = ""
+if search_mode == "Capitolo di Spesa":
+    query_pg = st.text_input(
+        "Piano di Gestione (facoltativo — filtra ulteriormente per PG)",
+        placeholder="es. 1  (lasciare vuoto per vedere tutti i PG del capitolo)",
     )
 
 
@@ -750,36 +756,34 @@ with col_query:
 #  FUNZIONI DI RICERCA PER CRITERIO
 # ===================================================================
 
-def search_at(df, mode, q):
+def search_at(df, mode, q, pg=None):
     """Filtra il DataFrame AT in base al criterio selezionato."""
     if df.empty:
         return pd.DataFrame()
     if mode == "CUP":
         return df[df["cup"].str.contains(q, na=False)]
     elif mode == "Capitolo di Spesa":
-        if "cap" in df.columns:
-            return df[df["cap"].astype(str).str.strip().str.upper() == q]
-        return pd.DataFrame()
-    elif mode == "Piano di Gestione":
-        if "pg" in df.columns:
-            return df[df["pg"].astype(str).str.strip().str.upper() == q]
-        return pd.DataFrame()
+        if "cap" not in df.columns:
+            return pd.DataFrame()
+        mask = df["cap"].astype(str).str.strip().str.upper() == q
+        if pg and "pg" in df.columns:
+            mask = mask & (df["pg"].astype(str).str.strip().str.upper() == pg)
+        return df[mask]
     return pd.DataFrame()
 
-def search_rn(df, mode, q):
+def search_rn(df, mode, q, pg=None):
     """Filtra il DataFrame RN in base al criterio selezionato."""
     if df.empty:
         return pd.DataFrame()
     if mode == "CUP":
         return df[df["CUP"].str.contains(q, na=False)]
     elif mode == "Capitolo di Spesa":
-        if "Capitolo_di_Spesa" in df.columns:
-            return df[df["Capitolo_di_Spesa"].astype(str).str.strip().str.upper() == q]
-        return pd.DataFrame()
-    elif mode == "Piano di Gestione":
-        if "Piano_Gestionale" in df.columns:
-            return df[df["Piano_Gestionale"].astype(str).str.strip().str.upper() == q]
-        return pd.DataFrame()
+        if "Capitolo_di_Spesa" not in df.columns:
+            return pd.DataFrame()
+        mask = df["Capitolo_di_Spesa"].astype(str).str.strip().str.upper() == q
+        if pg and "Piano_Gestionale" in df.columns:
+            mask = mask & (df["Piano_Gestionale"].astype(str).str.strip().str.upper() == pg)
+        return df[mask]
     return pd.DataFrame()
 
 
@@ -789,9 +793,10 @@ def search_rn(df, mode, q):
 
 if query:
     query_clean = query.strip().upper()
+    pg_clean = query_pg.strip().upper() if query_pg else None
 
-    results_at = search_at(df_at, search_mode, query_clean) if at_disponibile else pd.DataFrame()
-    results_rn = search_rn(df_rn, search_mode, query_clean) if rn_disponibile else pd.DataFrame()
+    results_at = search_at(df_at, search_mode, query_clean, pg_clean) if at_disponibile else pd.DataFrame()
+    results_rn = search_rn(df_rn, search_mode, query_clean, pg_clean) if rn_disponibile else pd.DataFrame()
 
     # Raggruppa per documento unico
     docs_at = group_at(results_at)
@@ -800,9 +805,14 @@ if query:
     n_docs_rn = len(docs_rn)
     tot_docs = n_docs_at + n_docs_rn
 
+    # Etichetta ricerca per il banner
+    search_label = f"{search_mode}: {query_clean}"
+    if search_mode == "Capitolo di Spesa" and pg_clean:
+        search_label += f" / PG: {pg_clean}"
+
     if tot_docs == 0:
         st.warning(
-            f"Nessun documento trovato per {search_mode} = «{query_clean}». "
+            f"Nessun documento trovato per {search_label}. "
             "Verificare il valore o provare una ricerca diversa."
         )
     else:
@@ -815,7 +825,7 @@ if query:
             )
         st.markdown(f"""
         <div class="mef-result-banner">
-          <span>Risultati per &nbsp;<strong>{search_mode}: {query_clean}</strong></span>
+          <span>Risultati per &nbsp;<strong>{search_label}</strong></span>
           <span><strong>{tot_docs}</strong> documento/i unico/i {extra_note}</span>
           <span><span class="mef-tag tag-at">AT</span>&nbsp; {n_docs_at} da Amm. Trasparente</span>
           <span><span class="mef-tag tag-rn">RN</span>&nbsp; {n_docs_rn} da Ricerca Normativa</span>
