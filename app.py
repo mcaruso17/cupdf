@@ -486,6 +486,27 @@ def onedrive_link_rn(cartella, filename):
 
 
 # ===================================================================
+#  UTILITÀ — pulizia valori numerici interi (7000.0 → 7000)
+# ===================================================================
+
+def clean_int(val):
+    """Converte stringhe tipo '7000.0' o float in '7000'.
+    Restituisce stringa vuota se il valore è nullo/invalido."""
+    if val is None:
+        return ""
+    s = str(val).strip()
+    if s in ("", "nan", "None", "NaT"):
+        return ""
+    try:
+        f = float(s)
+        if f == int(f):
+            return str(int(f))
+        return s
+    except (ValueError, OverflowError):
+        return s
+
+
+# ===================================================================
 #  CARICAMENTO DATI
 # ===================================================================
 
@@ -495,6 +516,10 @@ def load_at_data():
         return pd.DataFrame()
     df = pd.read_excel(AT_EXCEL)
     df["cup"] = df["cup"].astype(str).str.strip().str.upper()
+    # Pulizia colonne numeriche intere
+    for col in ("cap", "pg"):
+        if col in df.columns:
+            df[col] = df[col].apply(clean_int)
     df["_fonte"] = "AT"
     return df
 
@@ -517,6 +542,10 @@ def load_rn_data():
     if df.empty:
         return pd.DataFrame()
     df["CUP"] = df["CUP"].str.strip().str.upper()
+    # Pulizia colonne numeriche intere
+    for col in ("Capitolo_di_Spesa", "Piano_Gestionale"):
+        if col in df.columns:
+            df[col] = df[col].apply(clean_int)
     df["_fonte"] = "RN"
     return df.reset_index(drop=True)
 
@@ -553,12 +582,13 @@ st.markdown("""
 # ===================================================================
 
 st.markdown("""
-<div class="mef-page-title">Ricerca per CUP</div>
+<div class="mef-page-title">Ricerca Documentale</div>
 <div class="mef-page-subtitle">
   Consultazione integrata di&nbsp;
   <span class="mef-tag tag-at">AT</span>&nbsp;Amministrazione Trasparente
   &nbsp;e&nbsp;
   <span class="mef-tag tag-rn">RN</span>&nbsp;Ricerca Normativa — MIT
+  &nbsp;&#8212;&nbsp; Ricerca per CUP, Capitolo di Spesa o Piano di Gestione
 </div>
 """, unsafe_allow_html=True)
 
@@ -626,13 +656,70 @@ def card_footer(tag, tag_class, source_name, extra=""):
 
 
 # ===================================================================
-#  SEARCH INPUT
+#  SEARCH INPUT — criterio di ricerca selezionabile
 # ===================================================================
 
-query = st.text_input(
-    "Codice CUP (o parte di esso)",
-    placeholder="es. J31B20000050001",
-)
+SEARCH_MODES = {
+    "CUP":                  "Codice CUP (o parte di esso)",
+    "Capitolo di Spesa":    "Capitolo di Spesa (es. 7000)",
+    "Piano di Gestione":    "Piano di Gestione (es. 1)",
+}
+
+col_mode, col_query = st.columns([1, 3])
+with col_mode:
+    search_mode = st.selectbox(
+        "Criterio di ricerca",
+        options=list(SEARCH_MODES.keys()),
+    )
+with col_query:
+    placeholder = SEARCH_MODES[search_mode]
+    if search_mode == "CUP":
+        placeholder = "es. J31B20000050001"
+    elif search_mode == "Capitolo di Spesa":
+        placeholder = "es. 7000"
+    elif search_mode == "Piano di Gestione":
+        placeholder = "es. 1"
+    query = st.text_input(
+        SEARCH_MODES[search_mode],
+        placeholder=placeholder,
+    )
+
+
+# ===================================================================
+#  FUNZIONI DI RICERCA PER CRITERIO
+# ===================================================================
+
+def search_at(df, mode, q):
+    """Filtra il DataFrame AT in base al criterio selezionato."""
+    if df.empty:
+        return pd.DataFrame()
+    if mode == "CUP":
+        return df[df["cup"].str.contains(q, na=False)]
+    elif mode == "Capitolo di Spesa":
+        if "cap" in df.columns:
+            return df[df["cap"].astype(str).str.strip().str.upper() == q]
+        return pd.DataFrame()
+    elif mode == "Piano di Gestione":
+        if "pg" in df.columns:
+            return df[df["pg"].astype(str).str.strip().str.upper() == q]
+        return pd.DataFrame()
+    return pd.DataFrame()
+
+def search_rn(df, mode, q):
+    """Filtra il DataFrame RN in base al criterio selezionato."""
+    if df.empty:
+        return pd.DataFrame()
+    if mode == "CUP":
+        return df[df["CUP"].str.contains(q, na=False)]
+    elif mode == "Capitolo di Spesa":
+        if "Capitolo_di_Spesa" in df.columns:
+            return df[df["Capitolo_di_Spesa"].astype(str).str.strip().str.upper() == q]
+        return pd.DataFrame()
+    elif mode == "Piano di Gestione":
+        if "Piano_Gestionale" in df.columns:
+            return df[df["Piano_Gestionale"].astype(str).str.strip().str.upper() == q]
+        return pd.DataFrame()
+    return pd.DataFrame()
 
 
 # ===================================================================
@@ -642,28 +729,27 @@ query = st.text_input(
 if query:
     query_clean = query.strip().upper()
 
-    results_at = pd.DataFrame()
-    if at_disponibile:
-        results_at = df_at[df_at["cup"].str.contains(query_clean, na=False)]
-
-    results_rn = pd.DataFrame()
-    if rn_disponibile:
-        results_rn = df_rn[df_rn["CUP"].str.contains(query_clean, na=False)]
+    results_at = search_at(df_at, search_mode, query_clean) if at_disponibile else pd.DataFrame()
+    results_rn = search_rn(df_rn, search_mode, query_clean) if rn_disponibile else pd.DataFrame()
 
     tot = len(results_at) + len(results_rn)
 
     if tot == 0:
-        st.warning("Nessun documento trovato. Verificare il CUP o provare una ricerca parziale.")
+        st.warning(
+            f"Nessun documento trovato per {search_mode} = «{query_clean}». "
+            "Verificare il valore o provare una ricerca diversa."
+        )
     else:
         st.markdown(f"""
         <div class="mef-result-banner">
-          <span>Risultati per &nbsp;<strong>{query_clean}</strong></span>
+          <span>Risultati per &nbsp;<strong>{search_mode}: {query_clean}</strong></span>
           <span><strong>{tot}</strong> documento/i trovato/i</span>
           <span><span class="mef-tag tag-at">AT</span>&nbsp; {len(results_at)} da Amm. Trasparente</span>
           <span><span class="mef-tag tag-rn">RN</span>&nbsp; {len(results_rn)} da Ricerca Normativa</span>
         </div>
         """, unsafe_allow_html=True)
 
+        # Filtro per CUP se ce ne sono più di uno nei risultati
         all_cups = []
         if not results_at.empty:
             all_cups.extend(results_at["cup"].unique().tolist())
@@ -673,13 +759,14 @@ if query:
 
         if len(unique_cups) > 1:
             selected_cup = st.selectbox(
-                f"CUP multipli trovati ({len(unique_cups)}) — selezionarne uno:",
-                options=unique_cups,
+                f"CUP multipli trovati ({len(unique_cups)}) — selezionarne uno per filtrare:",
+                options=["Tutti"] + unique_cups,
             )
-            if not results_at.empty:
-                results_at = results_at[results_at["cup"] == selected_cup]
-            if not results_rn.empty:
-                results_rn = results_rn[results_rn["CUP"] == selected_cup]
+            if selected_cup != "Tutti":
+                if not results_at.empty:
+                    results_at = results_at[results_at["cup"] == selected_cup]
+                if not results_rn.empty:
+                    results_rn = results_rn[results_rn["CUP"] == selected_cup]
 
         tab_at, tab_rn, tab_all = st.tabs([
             f"Amm. Trasparente  ({len(results_at)})",
@@ -698,8 +785,8 @@ if query:
                         with col1:
                             st.markdown(
                                 field("CUP", row["cup"], mono=True)
-                                + field("Capitolo", str(row.get("cap", "")))
-                                + field("Piano Gestionale", str(row.get("pg", "")))
+                                + field("Capitolo", clean_int(row.get("cap", "")))
+                                + field("Piano Gestionale", clean_int(row.get("pg", "")))
                                 + field("Stato - Cap. - Piano", str(row.get("stacappg", ""))),
                                 unsafe_allow_html=True,
                             )
@@ -731,8 +818,8 @@ if query:
                         with col1:
                             st.markdown(
                                 field("CUP", row["CUP"], mono=True)
-                                + field("Capitolo di Spesa", str(row.get("Capitolo_di_Spesa", "")))
-                                + field("Piano Gestionale",  str(row.get("Piano_Gestionale",  "")))
+                                + field("Capitolo di Spesa", clean_int(row.get("Capitolo_di_Spesa", "")))
+                                + field("Piano Gestionale",  clean_int(row.get("Piano_Gestionale",  "")))
                                 + field("Importo (EUR)",     str(row.get("Importo_EUR",        ""))),
                                 unsafe_allow_html=True,
                             )
@@ -788,7 +875,7 @@ if query:
                     unsafe_allow_html=True,
                 )
                 cols_rn = ["CUP", "Tipologia", "Numero_Decreto", "Data_Decreto",
-                           "Capitolo_di_Spesa", "Documento"]
+                           "Capitolo_di_Spesa", "Piano_Gestionale", "Documento"]
                 cols_present = [c for c in cols_rn if c in results_rn.columns]
                 display_rn = results_rn[cols_present].copy()
                 display_rn.insert(0, "Fonte", "RN")
