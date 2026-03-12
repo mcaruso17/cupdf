@@ -19,6 +19,7 @@ RN_CSV_FILES = [
     "data/risultati_puliti_dirett.csv",
     "data/risultati_puliti_interm.csv",
     "data/risultati_puliti_minist.csv",
+    "data/risultati_puliti_gen.csv"
 ]
 
 SHAREPOINT_BASE = "https://mefgovit-my.sharepoint.com/my"
